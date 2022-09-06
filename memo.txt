@@ -1,0 +1,66 @@
+poetry run python <filename>
+
+似非QRコードの高速姿勢トラッキング
+
+TODO:
+  python
+    cv2.Mat <-> GPUTexture
+      mat.data がプレーンな配列
+      queue.write_texture, read_texture
+    show GPUTexture
+    //
+    関数にまとめる
+      cvimage_to_texture
+      texture_to_cvimage
+      draw_8unorm_texture_on_texture
+  wgsl
+    image result of pattern detection
+      color -> brightness
+      adoptive threshold
+      convolution 1d on texture
+    points result of pattern detection
+      k-mean clustering?
+    marker detection
+      convolution 1d on texture
+  python
+    marker to quaternion + translation
+    ////
+    python - wgpu を ProtocolBuffer あたりでラップできないか?
+
+
+
+Background
+  マーカーを用いた姿勢推定はARToolkit等で提案されている
+    マーカー検出処理のラベリングや輪郭検出あたりが重い
+  fish eye パターンを用いたものも提案されている(論文)
+    最大径を求める処理は重くないか?
+  新しく高速なものを提案する
+    QRコードに代表されるfish_eyeを利用する
+    wgpuで並列化する
+
+
+歪み補正
+  レンズの歪みを補正し、ピンホールモデルにする?
+
+マーカー仕様
+  位置パターン + 姿勢パターン*2
+    全マーカー共通でいいと思う
+    位置と姿勢は正負反転
+  id情報
+
+パターンそれぞれの検出
+  二値化
+  縦横畳み込み
+    小さいサイズの畳み込み結果がfalseのとき、次に大きいサイズの畳み込みを行う * 縦横
+  縦横の結果をandする
+  k-mean clustering?
+  //
+  k-mean clustering 以前は画素ごとに計算できる
+    render bundleとして扱ってよいか?
+
+マーカーの検出と姿勢推定
+  パターンが同一のマーカーに属するかの判定
+    位置パターンと姿勢パターンの中心を線分でつなぎ、その上を補間しつつ畳み込み
+    姿勢パターンxと姿勢パターンyについても一応確認してもよい
+  x,yを得たら式に放り込んでquaternionと大きさを得る
+    ピンホールモデルとorthogonalの違いに注意!!
