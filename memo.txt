@@ -5,18 +5,12 @@ poetry run python <filename>
 TODO:
   python
     cv2.Mat <-> GPUTexture
-      mat.data がプレーンな配列
-      queue.write_texture, read_texture
     show GPUTexture
-    //
     関数にまとめる
-      cvimage_to_texture
-      texture_to_cvimage
-      draw_8unorm_texture_on_texture
   wgsl
     image result of pattern detection
       color -> brightness
-      adoptive threshold
+      adoptive threshold (smoothstep)
       convolution 1d on texture
     points result of pattern detection
       k-mean clustering?
