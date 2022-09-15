@@ -9,13 +9,25 @@ TODO:
     関数にまとめる
   wgsl
     image result of pattern detection
-      color -> brightness
-      adoptive threshold (smoothstep)
-      convolution 1d on texture
+      preprocess image
+        grayscale
+        adoptive smooth threshold
+          //
+          gaussian filter
+            vertical
+            horizontal
+          smooth_threshold
+      matching * size
+        convolution
+          vertical
+          horizontal
+        threshold
+        and
+          position, rotation
     points result of pattern detection
       k-mean clustering?
     marker detection
-      convolution 1d on texture
+      convolution 1d on texture between position pattern to rotation pattern
   python
     marker to quaternion + translation
     ////
@@ -51,6 +63,7 @@ Background
   //
   k-mean clustering 以前は画素ごとに計算できる
     render bundleとして扱ってよいか?
+      wgpu-native 未実装らしい
 
 マーカーの検出と姿勢推定
   パターンが同一のマーカーに属するかの判定

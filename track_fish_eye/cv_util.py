@@ -3,7 +3,6 @@ import cv2
 import numpy
 
 import wgpu
-from wgpu.gui.auto import WgpuCanvas, run
 import wgpu.backends.rs  # noqa: F401, Select Rust backend
 
 import typing

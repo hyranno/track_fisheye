@@ -1,8 +1,13 @@
 import wgpu
 import wgpu.backends.rs  # noqa: F401, Select Rust backend
 
+import shader.draw_texture
 
-BLEND_STATE_REPLACE = (wgpu.BlendFactor.one, wgpu.BlendFactor.zero, wgpu.BlendOperation.add,)
+BLEND_STATE_REPLACE_SUB = (wgpu.BlendFactor.one, wgpu.BlendFactor.zero, wgpu.BlendOperation.add,)
+BLEND_STATE_REPLACE = {
+    "color": BLEND_STATE_REPLACE_SUB,
+    "alpha": BLEND_STATE_REPLACE_SUB,
+}
 
 
 def texture_type_to_sample_type(texture_format: str) -> wgpu.TextureSampleType:
@@ -15,101 +20,34 @@ def texture_type_to_sample_type(texture_format: str) -> wgpu.TextureSampleType:
     return texture_sample_type
 
 
-# def draw_texture_on_texture(src: wgpu.GPUTexture, dest: wgpu.GPUTexture, device: wgpu.GPUDevice):
+def create_buffer_texture(device: wgpu.GPUDevice, size: tuple[int, int, int]):
+    return device.create_texture(
+        size=size,
+        usage=wgpu.TextureUsage.COPY_DST
+        | wgpu.TextureUsage.COPY_SRC
+        | wgpu.TextureUsage.TEXTURE_BINDING
+        | wgpu.TextureUsage.RENDER_ATTACHMENT,
+        dimension=wgpu.TextureDimension.d2,
+        format=wgpu.TextureFormat.rgba8unorm,
+        mip_level_count=1,
+        sample_count=1,
+    )
+
+
 def draw_texture_on_texture(
     src: wgpu.GPUTexture, dest_view: wgpu.GPUTextureView, dest_format: wgpu.TextureFormat, device: wgpu.GPUDevice
 ):
-    shader_source = """
-    struct VertexInput {
-        @builtin(vertex_index) vertex_index : u32,
-    };
-    struct VertexOutput {
-        @builtin(position) pos: vec4<f32>,
-        @location(0) uv: vec2<f32>,
-    };
-
-    @stage(vertex)
-    fn vs_main(in: VertexInput) -> VertexOutput {
-        var positions = array<vec2<f32>, 4>(
-            vec2<f32>(-1.0, -1.0),
-            vec2<f32>(-1.0, 1.0),
-            vec2<f32>(1.0, -1.0),
-            vec2<f32>(1.0, 1.0),
-        );
-        let index = i32(in.vertex_index);
-        let p: vec2<f32> = positions[index];
-
-        var out: VertexOutput;
-        out.pos = vec4<f32>(p, 0.0, 1.0);
-        out.uv = (-p + 1.0) / 2.0;
-        return out;
-    }
-
-    @group(0) @binding(0) var samp: sampler;
-    @group(0) @binding(1) var tex: texture_2d<f32>;
-    @stage(fragment)
-    fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-        return textureSample(tex, samp, in.uv);
-    }
-    """
-    shader = device.create_shader_module(code=shader_source)
-    bind_group_layout = device.create_bind_group_layout(
-        entries=[
-            {
-                "binding": 0,
-                "visibility": wgpu.ShaderStage.FRAGMENT,
-                "sampler": {
-                    "type": wgpu.SamplerBindingType.filtering,
-                }
-            },
-            {
-                "binding": 1,
-                "visibility": wgpu.ShaderStage.FRAGMENT,
-                "texture": {
-                    "sample_type": texture_type_to_sample_type(src.format),
-                    "view_dimension": wgpu.TextureViewDimension.d2,
-                },
-            },
-        ],
-    )
-    bind_group = device.create_bind_group(
-        layout=bind_group_layout,
-        entries=[
-            {"binding": 0, "resource": device.create_sampler(min_filter="linear", mag_filter="linear")},
-            {"binding": 1, "resource": src.create_view(format=src.format)},
-        ],
-    )
-
-    pipeline_layout = device.create_pipeline_layout(bind_group_layouts=[bind_group_layout])
-    render_pipeline = device.create_render_pipeline(
-        layout=pipeline_layout,
-        vertex={
-            "module": shader,
-            "entry_point": "vs_main",
-            "buffers": [],
+    tex_shader = shader.draw_texture.TextureShader(device, src.format)
+    pipeline = tex_shader.create_render_pipeline([
+        {
+            "format": dest_format,
+            "blend": BLEND_STATE_REPLACE,
         },
-        primitive={
-            "topology": wgpu.PrimitiveTopology.triangle_strip,
-            "front_face": wgpu.FrontFace.ccw,
-            "cull_mode": wgpu.CullMode.none,
-        },
-        depth_stencil=None,
-        multisample=None,
-        fragment={
-            "module": shader,
-            "entry_point": "fs_main",
-            "targets": [
-                {
-                    "format": dest_format,
-                    "blend": {
-                        "color": BLEND_STATE_REPLACE,
-                        "alpha": BLEND_STATE_REPLACE,
-                    },
-                },
-            ],
-        },
-    )
-
+    ])
+    shader_bind = tex_shader.create_bind_group([
+        {"binding": 0, "resource": device.create_sampler(min_filter="linear", mag_filter="linear")},
+        {"binding": 1, "resource": src.create_view(format=src.format)},
+    ])
     command_encoder = device.create_command_encoder()
     render_pass = command_encoder.begin_render_pass(
         color_attachments=[
@@ -122,9 +60,8 @@ def draw_texture_on_texture(
             }
         ],
     )
-
-    render_pass.set_pipeline(render_pipeline)
-    render_pass.set_bind_group(0, bind_group, [], 0, 0)
+    render_pass.set_pipeline(pipeline)
+    render_pass.set_bind_group(0, shader_bind, [], 0, 0)
     render_pass.draw(4, 1, 0, 0)
     render_pass.end()
     device.queue.submit([command_encoder.finish()])

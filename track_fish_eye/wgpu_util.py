@@ -19,16 +19,12 @@ def create_canvas(title: str) -> tuple[wgpu.GPUDevice, wgpu.GPUCanvasContext]:
     return get_context(canvas)
 
 
-class RenderShaderBinding:
-    device: wgpu.GPUDevice
-    source: str
-    shader: wgpu.GPUShaderModule
-    bind_group_layout: wgpu.GPUBindGroupLayout
-    pipeline_layout: wgpu.GPUPipelineLayout
-    vertex: dict[str, typing.Any]
-    primitive: dict[str, typing.Any]
-    fragment: dict[str, typing.Any]
+def create_sized_canvas(size: tuple[int, int], title: str) -> tuple[wgpu.GPUDevice, wgpu.GPUCanvasContext]:
+    canvas = WgpuCanvas(size=size, title=title)
+    return get_context(canvas)
 
+
+class RenderShaderBinding:
     def __init__(
         self,
         device: wgpu.GPUDevice,
