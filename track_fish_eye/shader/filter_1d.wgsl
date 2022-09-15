@@ -9,9 +9,6 @@
 fn normalizer(num_sample: u32) -> f32 {  // mode is enum
   var result = 1.0;
   switch normalizing.val {
-    default: {  // None
-      result = 1.0;
-    }
     case 1: {  // num_sample
       result = 1.0 / f32(num_sample);
     }
@@ -22,6 +19,9 @@ fn normalizer(num_sample: u32) -> f32 {  // mode is enum
         sum += textureSample(kernel, kernel_samp, kernel_coord).r;
       }
       result = 1.0 / sum;
+    }
+    default: {  // None
+      result = 1.0;
     }
   }
   return result;

@@ -46,3 +46,10 @@ class GrayscaleShader(wgpu_util.RenderShaderBinding):
             "entry_point": "fs_main",
         }
         super().__init__(device, source, bind_entries, vertex, primitive, fragment)
+
+    def create_bind_group(self, view: wgpu.GPUTextureView, sampler: wgpu.GPUSampler):
+        entries = [
+            {"binding": 0, "resource": sampler},
+            {"binding": 1, "resource": view},
+        ]
+        return super().create_bind_group(entries)

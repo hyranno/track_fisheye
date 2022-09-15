@@ -12,7 +12,29 @@ import math
 import numpy
 import wgpu
 from wgpu.gui.auto import run
-import ctypes
+
+
+def push_2drender_pass(
+    encoder: wgpu.GPUCommandEncoder,
+    target: wgpu.GPUTextureView,
+    pipeline: wgpu.GPURenderPipeline,
+    bind: wgpu.GPUBindGroup,
+):
+    render_pass = encoder.begin_render_pass(
+        color_attachments=[
+            {
+                "view": target,
+                "resolve_target": None,
+                "clear_value": (0, 0, 0, 1),
+                "load_op": wgpu.LoadOp.clear,
+                "store_op": wgpu.StoreOp.store,
+            }
+        ],
+    )
+    render_pass.set_pipeline(pipeline)
+    render_pass.set_bind_group(0, bind, [], 0, 0)
+    render_pass.draw(4, 1, 0, 0)
+    render_pass.end()
 
 
 def gaussian_kernel_ndarray(size: int) -> numpy.ndarray:
@@ -62,12 +84,14 @@ def gaussian_kernel_texture(size: int, device: wgpu.GPUDevice) -> wgpu.GPUTextur
     return texture
 
 
-device, context = wgpu_util.create_sized_canvas((512, 512), "image io example")
+resolution = 512, 512
+device, context = wgpu_util.create_sized_canvas(resolution, "image io example")
 context_texture_view = context.get_current_texture()
 context_texture_format = context.get_preferred_format(device.adapter)
 
 texture_src = cv_util.imread_texture("resources/image.png", device)
 shape = texture_src.size[1], texture_src.size[0], 4  # for numpy.ndarray
+
 linear_sampler = device.create_sampler(min_filter="linear", mag_filter="linear")
 nearest_sampler = device.create_sampler(min_filter="nearest", mag_filter="nearest")
 horizontal_tmp_texture = texture_util.create_buffer_texture(device, texture_src.size)
@@ -82,19 +106,13 @@ grayscale_pipeline = grayscale_shader.create_render_pipeline([
         "blend": texture_util.BLEND_STATE_REPLACE,
     },
 ])
-grayscale_bind = grayscale_shader.create_bind_group([
-    {"binding": 0, "resource": linear_sampler},
-    {"binding": 1, "resource": texture_src.create_view(format=texture_src.format)},
-])
-
-uniform_resolution = device.create_buffer_with_data(
-    data=(ctypes.c_uint32 * 2)(512, 512),
-    usage=wgpu.BufferUsage.UNIFORM
-)
+grayscale_bind = grayscale_shader.create_bind_group(texture_src.create_view(), linear_sampler)
 
 gaussian_texture = texture_util.create_buffer_texture(device, texture_src.size)
 gaussian_view = gaussian_texture.create_view()
-gaussian_kernel_size = 11
+gaussian_kernel_size = 79
+# one big kernel will be efficient rather than repeated blur
+# total_kernel_size = sqrt(num_loop) * kernel_size
 gaussian_kernel = gaussian_kernel_texture(gaussian_kernel_size, device)
 gaussian_shader = shader.filter_1d.Filter1dShader(
     device,
@@ -108,62 +126,38 @@ gaussian_pipeline = gaussian_shader.create_render_pipeline([
         "blend": texture_util.BLEND_STATE_REPLACE,
     },
 ])
-gaussian_normalize = shader.filter_1d.NormalizerMode.create_uniform_buffer(
-    device,
-    shader.filter_1d.NormalizerMode.ONE_SUM
+gaussian_bind_horizontal = gaussian_shader.create_bind_group(
+    grayscale_view,
+    linear_sampler,
+    resolution,
+    gaussian_kernel.create_view(),
+    linear_sampler,
+    (gaussian_kernel_size / resolution[0], 0.0),
+    shader.filter_1d.NormalizerMode.ONE_SUM,
 )
-gaussian_uniform_horizontal = device.create_buffer_with_data(
-    data=(ctypes.c_float * 2)(gaussian_kernel_size / 512.0, 0.0),
-    usage=wgpu.BufferUsage.UNIFORM
+gaussian_bind_vertical = gaussian_shader.create_bind_group(
+    horizontal_tmp_view,
+    linear_sampler,
+    resolution,
+    gaussian_kernel.create_view(),
+    linear_sampler,
+    (0.0, gaussian_kernel_size / resolution[0]),
+    shader.filter_1d.NormalizerMode.ONE_SUM,
 )
-gaussian_bind_horizontal = gaussian_shader.create_bind_group([
-    {"binding": 0, "resource": grayscale_view},
-    {"binding": 1, "resource": linear_sampler},
-    {"binding": 2, "resource": {"buffer": uniform_resolution, "offset": 0, "size": uniform_resolution.size}},
-    {"binding": 3, "resource": gaussian_kernel.create_view(format=gaussian_kernel.format)},
-    {"binding": 4, "resource": linear_sampler},
-    {"binding": 5, "resource": {
-        "buffer": gaussian_uniform_horizontal,
-        "offset": 0,
-        "size": gaussian_uniform_horizontal.size
-    }},
-    {"binding": 6, "resource": {"buffer": gaussian_normalize, "offset": 0, "size": gaussian_normalize.size}},
-])
-gaussian_uniform_vertical = device.create_buffer_with_data(
-    data=(ctypes.c_float * 2)(0.0, gaussian_kernel_size / 512.0),
-    usage=wgpu.BufferUsage.UNIFORM
-)
-gaussian_bind_vertical = gaussian_shader.create_bind_group([
-    {"binding": 0, "resource": horizontal_tmp_view},
-    {"binding": 1, "resource": linear_sampler},
-    {"binding": 2, "resource": {"buffer": uniform_resolution, "offset": 0, "size": uniform_resolution.size}},
-    {"binding": 3, "resource": gaussian_kernel.create_view(format=gaussian_kernel.format)},
-    {"binding": 4, "resource": linear_sampler},
-    {"binding": 5, "resource": {
-        "buffer": gaussian_uniform_vertical,
-        "offset": 0,
-        "size": gaussian_uniform_vertical.size
-    }},
-    {"binding": 6, "resource": {"buffer": gaussian_normalize, "offset": 0, "size": gaussian_normalize.size}},
-])
 
 smooth_threshold_shader = shader.smooth_threshold.SmoothThresholdShader(device, texture_src.format)
-smooth_edges = device.create_buffer_with_data(
-    data=(ctypes.c_float * 2)(-0.2, 0.2),
-    usage=wgpu.BufferUsage.UNIFORM
-)
 smooth_threshold_pipeline = smooth_threshold_shader.create_render_pipeline([
     {
         "format": context_texture_format,  # context_texture_format,
         "blend": texture_util.BLEND_STATE_REPLACE,
     },
 ])
-smooth_threshold_bind = smooth_threshold_shader.create_bind_group([
-    {"binding": 0, "resource": linear_sampler},
-    {"binding": 1, "resource": grayscale_view},
-    {"binding": 2, "resource": gaussian_view},
-    {"binding": 3, "resource": {"buffer": smooth_edges, "offset": 0, "size": smooth_edges.size}},
-])
+smooth_threshold_bind = smooth_threshold_shader.create_bind_group(
+    linear_sampler,
+    grayscale_view,
+    gaussian_view,
+    (-0.1, 0.1)
+)
 
 
 def draw(
@@ -171,72 +165,14 @@ def draw(
 ):
     command_encoder = device.create_command_encoder()
 
-    render_pass = command_encoder.begin_render_pass(
-        color_attachments=[
-            {
-                "view": grayscale_view,  # TODO causing bug
-                "resolve_target": None,
-                "clear_value": (0, 0, 0, 1),
-                "load_op": wgpu.LoadOp.clear,
-                "store_op": wgpu.StoreOp.store,
-            }
-        ],
-    )
-    render_pass.set_pipeline(grayscale_pipeline)
-    render_pass.set_bind_group(0, grayscale_bind, [], 0, 0)
-    render_pass.draw(4, 1, 0, 0)
-    render_pass.end()
-
-    render_pass = command_encoder.begin_render_pass(
-        color_attachments=[
-            {
-                "view": horizontal_tmp_view,
-                "resolve_target": None,
-                "clear_value": (0, 0, 0, 1),
-                "load_op": wgpu.LoadOp.clear,
-                "store_op": wgpu.StoreOp.store,
-            }
-        ],
-    )
-    render_pass.set_pipeline(gaussian_pipeline)
-    render_pass.set_bind_group(0, gaussian_bind_horizontal, [], 0, 0)
-    render_pass.draw(4, 1, 0, 0)
-    render_pass.end()
-
-    render_pass = command_encoder.begin_render_pass(
-        color_attachments=[
-            {
-                "view": gaussian_view,  # dest.create_view(),
-                "resolve_target": None,
-                "clear_value": (0, 0, 0, 1),
-                "load_op": wgpu.LoadOp.clear,
-                "store_op": wgpu.StoreOp.store,
-            }
-        ],
-    )
-    render_pass.set_pipeline(gaussian_pipeline)
-    render_pass.set_bind_group(0, gaussian_bind_vertical, [], 0, 0)
-    render_pass.draw(4, 1, 0, 0)
-    render_pass.end()
-
-    render_pass = command_encoder.begin_render_pass(
-        color_attachments=[
-            {
-                "view": context_texture_view,  # dest.create_view(),
-                "resolve_target": None,
-                "clear_value": (0, 0, 0, 1),
-                "load_op": wgpu.LoadOp.clear,
-                "store_op": wgpu.StoreOp.store,
-            }
-        ],
-    )
-    render_pass.set_pipeline(smooth_threshold_pipeline)
-    render_pass.set_bind_group(0, smooth_threshold_bind, [], 0, 0)
-    render_pass.draw(4, 1, 0, 0)
-    render_pass.end()
+    push_2drender_pass(command_encoder, grayscale_view, grayscale_pipeline, grayscale_bind)
+    push_2drender_pass(command_encoder, horizontal_tmp_view, gaussian_pipeline, gaussian_bind_horizontal)
+    push_2drender_pass(command_encoder, gaussian_view, gaussian_pipeline, gaussian_bind_vertical)
+    push_2drender_pass(command_encoder, context_texture_view, smooth_threshold_pipeline, smooth_threshold_bind)
 
     device.queue.submit([command_encoder.finish()])
 
 
 draw(texture_src, context_texture_view, context_texture_format, device)
+# texture_util.draw_texture_on_texture(gaussian_texture, context_texture_view, context_texture_format, device)
 run()

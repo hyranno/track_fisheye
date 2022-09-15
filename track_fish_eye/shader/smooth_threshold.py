@@ -1,5 +1,6 @@
 import os
 import wgpu
+import ctypes
 
 # import mymodule
 import wgpu_util
@@ -61,3 +62,22 @@ class SmoothThresholdShader(wgpu_util.RenderShaderBinding):
             "entry_point": "fs_main",
         }
         super().__init__(device, source, bind_entries, vertex, primitive, fragment)
+
+    def create_bind_group(
+        self,
+        sampler: wgpu.GPUSampler,
+        view: wgpu.GPUTextureView,
+        view_mean: wgpu.GPUTextureView,
+        edges: tuple[float, float],
+    ):
+        buffer_edges = self.device.create_buffer_with_data(
+            data=(ctypes.c_float * 2)(edges[0], edges[1]),
+            usage=wgpu.BufferUsage.UNIFORM
+        )
+        entries = [
+            {"binding": 0, "resource": sampler},
+            {"binding": 1, "resource": view},
+            {"binding": 2, "resource": view_mean},
+            {"binding": 3, "resource": {"buffer": buffer_edges, "offset": 0, "size": buffer_edges.size}},
+        ]
+        return super().create_bind_group(entries)

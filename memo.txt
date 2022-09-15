@@ -12,18 +12,19 @@ TODO:
       preprocess image
         grayscale
         adoptive smooth threshold
-          //
           gaussian filter
             vertical
             horizontal
           smooth_threshold
+      //
       matching * size
-        convolution
+        [0,1] -> [-1, 1]
+        convolution, threshold
           vertical
           horizontal
-        threshold
-        and
-          position, rotation
+        combine
+          vertical & horizontal
+          other size
     points result of pattern detection
       k-mean clustering?
     marker detection
