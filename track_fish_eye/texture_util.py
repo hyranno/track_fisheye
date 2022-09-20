@@ -34,6 +34,20 @@ def create_buffer_texture(device: wgpu.GPUDevice, size: tuple[int, int, int]):
     )
 
 
+def create_buffer_texture_float(device: wgpu.GPUDevice, size: tuple[int, int, int]):
+    return device.create_texture(
+        size=size,
+        usage=wgpu.TextureUsage.COPY_DST
+        | wgpu.TextureUsage.COPY_SRC
+        | wgpu.TextureUsage.TEXTURE_BINDING
+        | wgpu.TextureUsage.RENDER_ATTACHMENT,
+        dimension=wgpu.TextureDimension.d2,
+        format=wgpu.TextureFormat.rgba32float,
+        mip_level_count=1,
+        sample_count=1,
+    )
+
+
 def draw_texture_on_texture(
     src: wgpu.GPUTexture, dest_view: wgpu.GPUTextureView, dest_format: wgpu.TextureFormat, device: wgpu.GPUDevice
 ):

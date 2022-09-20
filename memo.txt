@@ -16,15 +16,13 @@ TODO:
             vertical
             horizontal
           smooth_threshold
-      //
-      matching * size
+      // 似非コードの印刷と撮影
+      match multi scale
         [0,1] -> [-1, 1]
-        convolution, threshold
-          vertical
-          horizontal
-        combine
-          vertical & horizontal
-          other size
+        convolution
+        threshold
+        or (other size)
+      and (vertical, horizontal)(positive, negative)
     points result of pattern detection
       k-mean clustering?
     marker detection
@@ -34,6 +32,15 @@ TODO:
     ////
     python - wgpu を ProtocolBuffer あたりでラップできないか?
 
+
+実装メモ
+  match_multi_scaleあたりから3値を扱うのでcompute_shaderの方がメモリ量で有利か
+  match_multi_scale
+    サイズごとにconvolutionするのは重いか
+      opencv同様の白黒反転境界を検出する実装だと高速だがノイズやオクルージョンに弱い
+      サイズごとに並列化もできるがメモリ消費量が大きい
+    別々のshaderで処理してもよい
+      convolutionはfilter_1d
 
 
 Background

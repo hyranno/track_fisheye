@@ -3,9 +3,10 @@ import wgpu_util
 import texture_util
 import cv_util
 
-import shader.grayscale
+import shader.remap
 import shader.filter_1d
-import shader.smooth_threshold
+import shader.threshold
+import shader.boolean_ops
 
 import array
 import math
@@ -89,75 +90,66 @@ device, context = wgpu_util.create_sized_canvas(resolution, "image io example")
 context_texture_view = context.get_current_texture()
 context_texture_format = context.get_preferred_format(device.adapter)
 
-texture_src = cv_util.imread_texture("resources/image.png", device)
+texture_src = cv_util.imread_texture("resources/image_preproced.png", device)
 
 linear_sampler = device.create_sampler(min_filter="linear", mag_filter="linear")
 nearest_sampler = device.create_sampler(min_filter="nearest", mag_filter="nearest")
-horizontal_tmp_texture = texture_util.create_buffer_texture(device, texture_src.size)
-horizontal_tmp_view = horizontal_tmp_texture.create_view()
+tmp_texture = texture_util.create_buffer_texture(device, texture_src.size)
+tmp_view = tmp_texture.create_view()
 
-grayscale_texture = texture_util.create_buffer_texture(device, texture_src.size)
-grayscale_view = grayscale_texture.create_view()
-grayscale_shader = shader.grayscale.GrayscaleShader(device, texture_src.format)
-grayscale_pipeline = grayscale_shader.create_render_pipeline([
+remap_view = texture_util.create_buffer_texture_float(device, texture_src.size).create_view()
+remap_shader = shader.remap.RemapShader(device, texture_src.format)
+remap_pipeline = remap_shader.create_render_pipeline([
     {
-        "format": grayscale_texture.format,  # context_texture_format,
+        "format": remap_view.texture.format,  # context_texture_format,
         "blend": texture_util.BLEND_STATE_REPLACE,
     },
 ])
-grayscale_bind = grayscale_shader.create_bind_group(texture_src.create_view(), linear_sampler)
-
-gaussian_texture = texture_util.create_buffer_texture(device, texture_src.size)
-gaussian_view = gaussian_texture.create_view()
-gaussian_kernel_size = 79
-# one big kernel will be efficient rather than repeated blur
-# total_kernel_size = sqrt(num_loop) * kernel_size
-gaussian_kernel = gaussian_kernel_texture(gaussian_kernel_size, device)
-gaussian_shader = shader.filter_1d.Filter1dShader(
-    device,
-    grayscale_texture.format,
-    gaussian_kernel.format,
-    wgpu.SamplerBindingType.filtering
+remap_bind = remap_shader.create_bind_group(
+    texture_src.create_view(),
+    linear_sampler,
+    (-0.5, -0.5, -0.5, 0.0),
+    (2.0, 2.0, 2.0, 1.0),
 )
-gaussian_pipeline = gaussian_shader.create_render_pipeline([
+
+threshold_view_positive = texture_util.create_buffer_texture(device, texture_src.size).create_view()
+threshold_view_negative = texture_util.create_buffer_texture(device, texture_src.size).create_view()
+threshold_shader = shader.threshold.ThresholdShader(device, remap_view.texture.format)
+threshold_pipeline = threshold_shader.create_render_pipeline([
     {
-        "format": grayscale_texture.format,
+        "format": threshold_view_positive.texture.format,
         "blend": texture_util.BLEND_STATE_REPLACE,
     },
 ])
-gaussian_bind_horizontal = gaussian_shader.create_bind_group(
-    grayscale_view,
+threshold_bind_positive = threshold_shader.create_bind_group(
+    remap_view,
     linear_sampler,
-    resolution,
-    gaussian_kernel.create_view(),
-    linear_sampler,
-    (gaussian_kernel_size / resolution[0], 0.0),
-    shader.filter_1d.NormalizerMode.ONE_SUM,
+    0.2,
+    shader.threshold.NegativeMode.NONE,
 )
-gaussian_bind_vertical = gaussian_shader.create_bind_group(
-    horizontal_tmp_view,
+threshold_bind_negative = threshold_shader.create_bind_group(
+    remap_view,
     linear_sampler,
-    resolution,
-    gaussian_kernel.create_view(),
-    linear_sampler,
-    (0.0, gaussian_kernel_size / resolution[0]),
-    shader.filter_1d.NormalizerMode.ONE_SUM,
+    -0.2,
+    shader.threshold.NegativeMode.ENABLE,
 )
 
-smooth_threshold_texture = texture_util.create_buffer_texture(device, texture_src.size)
-smooth_threshold_view = smooth_threshold_texture.create_view()
-smooth_threshold_shader = shader.smooth_threshold.SmoothThresholdShader(device, texture_src.format)
-smooth_threshold_pipeline = smooth_threshold_shader.create_render_pipeline([
+bool_view = texture_util.create_buffer_texture(device, texture_src.size).create_view()
+bool_shader = shader.boolean_ops.BooleanOpsShader(device, threshold_view_positive.texture.format)
+bool_pipeline = bool_shader.create_render_pipeline([
     {
-        "format": smooth_threshold_view.texture.format,
+        "format": bool_view.texture.format,
         "blend": texture_util.BLEND_STATE_REPLACE,
     },
 ])
-smooth_threshold_bind = smooth_threshold_shader.create_bind_group(
+bool_bind = bool_shader.create_bind_group(
+    threshold_view_positive,
     linear_sampler,
-    grayscale_view,
-    gaussian_view,
-    (-0.1, 0.1)
+    0.5,
+    threshold_view_negative,
+    linear_sampler,
+    0.5,
+    shader.boolean_ops.OperatorMode.OR,
 )
 
 
@@ -166,16 +158,16 @@ def draw(
 ):
     command_encoder = device.create_command_encoder()
 
-    push_2drender_pass(command_encoder, grayscale_view, grayscale_pipeline, grayscale_bind)
-    push_2drender_pass(command_encoder, horizontal_tmp_view, gaussian_pipeline, gaussian_bind_horizontal)
-    push_2drender_pass(command_encoder, gaussian_view, gaussian_pipeline, gaussian_bind_vertical)
-    push_2drender_pass(command_encoder, smooth_threshold_view, smooth_threshold_pipeline, smooth_threshold_bind)
+    push_2drender_pass(command_encoder, remap_view, remap_pipeline, remap_bind)
+    push_2drender_pass(command_encoder, threshold_view_positive, threshold_pipeline, threshold_bind_positive)
+    push_2drender_pass(command_encoder, threshold_view_negative, threshold_pipeline, threshold_bind_negative)
+    push_2drender_pass(command_encoder, bool_view, bool_pipeline, bool_bind)
 
     device.queue.submit([command_encoder.finish()])
 
 
 draw(texture_src, context_texture_view, context_texture_format, device)
-texture_util.draw_texture_on_texture(smooth_threshold_texture, context_texture_view, context_texture_format, device)
-shape = texture_src.size[1], texture_src.size[0], 4  # for numpy.ndarray
-cv_util.imwrite_texture(smooth_threshold_texture, shape, "resources/image_preproced.png", device)
+texture_util.draw_texture_on_texture(
+    bool_view.texture, context_texture_view, context_texture_format, device
+)
 run()

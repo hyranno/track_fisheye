@@ -50,6 +50,5 @@ fn filter_1d(uv: vec2<f32>) -> vec4<f32> {
 
 @stage(fragment)
 fn fs_main(in: VertexOutput) -> @location(0) vec4<f32> {
-  // return textureSample(tex, tex_samp, in.uv);
   return filter_1d(in.uv);
 }
