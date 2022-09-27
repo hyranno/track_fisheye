@@ -5,11 +5,13 @@ description = ""
 authors = ["Your Name <you@example.com>"]
 
 [tool.poetry.dependencies]
-python = "^3.10"
+python = "3.10"
 wgpu = "^0.8.1"
 glfw = "^2.5.4"
 numpy = "^1.23.2"
 opencv-python-headless = "^4.6.0"
+scipy = "^1.9.1"
+pyclustering = "^0.10.1"
 
 [tool.poetry.dev-dependencies]
 pytest = "^5.2"

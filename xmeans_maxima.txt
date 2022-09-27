@@ -1,0 +1,97 @@
+load(linearalgebra)$
+
+flatten_mat(m) := flatten(args(m))$
+
+get_num_col(mat) := matrix_size(mat)[2]$
+get_num_row(mat) := matrix_size(mat)[1]$
+
+
+calc_mean(data) := block(
+  [num_data, num_dimension, mean_list],
+  num_data : get_num_col(data),
+  num_dimension : get_num_row(data),
+  mean_list : makelist( [lsum(x/num_data, x, flatten_mat(row(data, i)))], i, num_dimension ),
+  apply('matrix, mean_list)
+)$
+calc_variance(data, mean) := block(
+  [num_data, num_dimension, variance_list],
+  num_data : get_num_col(data),
+  num_dimension : get_num_row(data),
+  variance_list : makelist(
+    [lsum((x-mean[i][1])*(x-mean[i][1])/num_data, x, flatten_mat(row(data, i)))],
+    i, num_dimension ),
+  apply('matrix, variance_list)
+)$
+
+cluster_f(data, mean, variance, x) := block(
+  [num_dimension, variance_mat, factor1, factor2],
+  num_dimension : length(data),
+  variance_mat : apply('diag_matrix, flatten_mat(variance)),
+  factor1 : (2 * %pi)^(-num_dimension/2) * determinant(variance_mat)^(-1/2),
+  factor2 : exp(-1/2 * transpose(x-mean) . invert(variance_mat) . (x-mean)),
+  factor1 * factor2
+)$
+cluster_L(data) := block(
+  [num_data, num_dimension, mean, variance],
+  num_data : get_num_col(data),
+  num_dimension : get_num_row(data),
+  mean : calc_mean(data),
+  variance : calc_variance(data, mean),
+  product(cluster_f(data, mean, variance, col(data, i)), i, 1, num_data)
+)$
+
+BIC_raw(data) := block(
+  [num_data, num_dimension, L, q],
+  num_data : get_num_col(data),
+  num_dimension : get_num_row(data),
+  L : cluster_L(data),
+  q : 2 * num_dimension,
+  -2 * log(L) + q * log(num_data)
+)$
+
+BIC_simp(data) := block(
+  [num_data, num_dimension, mean, variance, logFactor1, logL, q],
+  num_data : get_num_col(data),
+  num_dimension : get_num_row(data),
+  mean : calc_mean(data),
+  variance : calc_variance(data, mean),
+  logL : num_data * (-num_dimension/2) * log(2*%pi) + (-1/2) * lsum(
+    lsum(
+      (data[d][i]-mean[d][1])^2,
+      i, makelist(ti, ti, 1, num_data)
+    ) / variance[d][1] + num_data * log(variance[d][1]),
+    d, makelist(td, td, 1, num_dimension)
+  ),
+  q : 2 * num_dimension,
+  -2 * logL + q * log(num_data)
+)$
+
+data : matrix(
+  [d_00, d_01, d_02, d_03],
+  [d_10, d_11, d_12, d_13]
+);
+declare(d_00, real)$
+declare(d_01, real)$
+declare(d_10, real)$
+declare(d_11, real)$
+
+/*
+BIC_raw(data);
+BIC_simp(data);
+*/
+ev( radcan(ratsimp(expand(
+  BIC_raw(data) = BIC_simp(data)
+))), pred );
+
+
+/* BIC_div */
+BIC1 : -2 * log(L1) + q * log(num_data1)$
+BIC2 : -2 * log(L2) + q * log(num_data2)$
+q_div : 2*q$
+L_div : 0.5 / K * L1 * L2$
+BIC_div_raw : -2 * log(L_div) + q_div * log(num_data)$
+BIC_div_simp : BIC1 + BIC2 - 2*log(0.5/K) + q * log(num_data^2 / (num_data1*num_data2))$
+
+ev( radcan(ratsimp(expand(
+  BIC_div_raw = BIC_div_simp
+))), pred );

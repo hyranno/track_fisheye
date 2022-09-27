@@ -156,4 +156,6 @@ draw(texture_src, context_texture_view, context_texture_format, device)
 texture_util.draw_texture_on_texture(
     match_result_view.texture, context_texture_view, context_texture_format, device
 )
+shape = texture_src.size[1], texture_src.size[0], 4  # for numpy.ndarray
+cv_util.imwrite_texture(match_result_view.texture, shape, "resources/image_matched.png", device)
 run()

@@ -2,6 +2,8 @@ poetry run python <filename>
 
 似非QRコードの高速姿勢トラッキング
 
+x-meansのGPU実装は作業量が重いし本筋でもないので後でやるか
+
 TODO:
   python
     cv2.Mat <-> GPUTexture
@@ -16,7 +18,6 @@ TODO:
             vertical
             horizontal
           smooth_threshold
-      // 似非コードの印刷と撮影
       match multi scale
         [0,1] -> [-1, 1]
         convolution
@@ -24,26 +25,29 @@ TODO:
         or (other size)
       and (vertical, horizontal)(positive, negative)
     points result of pattern detection
-      k-mean clustering?
+      collect positive, negative
+      x-mean clustering (positive, negative) by pyclustering
+    //
     marker detection
       convolution 1d on texture between position pattern to rotation pattern
   python
     marker to quaternion + translation
     ////
+    似非コードの印刷と撮影
+    x-mean のwgpu実行
     python - wgpu を ProtocolBuffer あたりでラップできないか?
 
 
 実装メモ
-  match_multi_scaleあたりから3値を扱うのでcompute_shaderの方がメモリ量で有利か
   match_multi_scale
-    サイズごとにconvolutionするのは重いか
-      opencv同様の白黒反転境界を検出する実装だと高速だがノイズやオクルージョンに弱い
-      サイズごとに並列化もできるがメモリ消費量が大きい
-    別々のshaderで処理してもよい
-      convolutionはfilter_1d
+    3値を扱うのでcompute_shaderの方がメモリ量で有利か
+    デバッグ用に画像化する処理も欲しい
+    別々のshaderで処理してもよいか
+      remap, filter_1d(convolution), threshold, boolean_ops
 
 
 Background
+  マーカーの姿勢推定は、トラッキングや自己位置推定に有用
   マーカーを用いた姿勢推定はARToolkit等で提案されている
     マーカー検出処理のラベリングや輪郭検出あたりが重い
   fish eye パターンを用いたものも提案されている(論文)
