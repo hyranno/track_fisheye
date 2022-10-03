@@ -37,17 +37,18 @@ def push_2drender_pass(
 
 
 def fisheye_kernel_ndarray() -> numpy.ndarray:
-    kernel_data: array.array[float] = array.array('f', [1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0])
-    kernel = numpy.ndarray(
-        shape=(1, len(kernel_data)),
-        dtype=numpy.float32,
-        buffer=numpy.array(kernel_data)
-    )
+    kernel = numpy.array([
+        1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0
+    ], dtype=numpy.dtype('<f'), order='C')
     return kernel
 
 
-def fisheye_kernel_texture(device: wgpu.GPUDevice) -> wgpu.GPUTexture:
-    kernel_ndarray = fisheye_kernel_ndarray()
+def fisheye_PN_kernel_ndarray(kernel_half: numpy.ndarray) -> numpy.ndarray:
+    kernel = numpy.concatenate((kernel_half, -kernel_half), axis=None)
+    return kernel
+
+
+def kernel1d_texture(device: wgpu.GPUDevice, kernel_ndarray: numpy.ndarray) -> wgpu.GPUTexture:
     texture_data = kernel_ndarray.data
     size = kernel_ndarray.size
     texture_size: tuple[int, int, int] = size, 1, 1
@@ -91,10 +92,10 @@ nearest_sampler = device.create_sampler(min_filter="nearest", mag_filter="neares
 tmp_texture = texture_util.create_buffer_texture(device, texture_src.size)
 tmp_view = tmp_texture.create_view()
 
-kernel_view = fisheye_kernel_texture(device).create_view()
+kernel = fisheye_kernel_ndarray()
 match_view_vertical = texture_util.create_buffer_texture(device, texture_src.size).create_view()
 match_view_horizontal = texture_util.create_buffer_texture(device, texture_src.size).create_view()
-match_shader = shader.match_multi_scale.MatchMultiScale1dShader(device, texture_src.format, kernel_view.texture.format)
+match_shader = shader.match_multi_scale.MatchMultiScale1dShader(device, texture_src.format)
 match_pipeline = match_shader.create_render_pipeline([
     {
         "format": match_view_vertical.texture.format,
@@ -104,20 +105,18 @@ match_pipeline = match_shader.create_render_pipeline([
 match_bind_vertical = match_shader.create_bind_group(
     view_src,
     linear_sampler,
-    resolution,
-    kernel_view,
+    kernel,
+    0.7,
     (0.0, 0.05),
-    0.6,
     2.0,
     1.1,
 )
 match_bind_horizontal = match_shader.create_bind_group(
     view_src,
     linear_sampler,
-    resolution,
-    kernel_view,
+    kernel,
+    0.7,
     (0.05, 0.0),
-    0.6,
     2.0,
     1.1,
 )
@@ -140,9 +139,7 @@ match_result_bind = match_result_shader.create_bind_group(
 )
 
 
-def draw(
-    src: wgpu.GPUTexture, dest_view: wgpu.GPUTextureView, dest_format: wgpu.TextureFormat, device: wgpu.GPUDevice
-):
+def draw(device: wgpu.GPUDevice):
     command_encoder = device.create_command_encoder()
 
     push_2drender_pass(command_encoder, match_view_horizontal, match_pipeline, match_bind_horizontal)
@@ -152,7 +149,7 @@ def draw(
     device.queue.submit([command_encoder.finish()])
 
 
-draw(texture_src, context_texture_view, context_texture_format, device)
+draw(device)
 texture_util.draw_texture_on_texture(
     match_result_view.texture, context_texture_view, context_texture_format, device
 )

@@ -27,23 +27,42 @@ TODO:
     points result of pattern detection
       collect positive, negative
       x-mean clustering (positive, negative) by pyclustering
-    //
     marker detection
-      convolution 1d on texture between position pattern to rotation pattern
+      make pairs of position + 2 rotation
+        convolution 1d on texture between position-rotation
+          textureSampleがcomputeだと使えなくて面倒くさい
+          fragmentの出力先をr32floatでnum_positions*num_rotationsのtextureにしてもええか
+        pick 2 max
+        filter (threshold < 2 max)
+  //
   python
     marker to quaternion + translation
+    perspective
     ////
     似非コードの印刷と撮影
     x-mean のwgpu実行
+      分割に最小距離条件も加えたい
     python - wgpu を ProtocolBuffer あたりでラップできないか?
 
 
+リファクタリング
+  resolutionをtextureDimensionsにする
+  match_multi_scale
+    min, max 両方を別のチャネルに出力してもよさそう
+    閾値処理を match_result_integrate へ移す
+  cv_util.texture_to_cvimage
+    shape ではなく num_channels を取る
+
 実装メモ
   match_multi_scale
-    3値を扱うのでcompute_shaderの方がメモリ量で有利か
-    デバッグ用に画像化する処理も欲しい
+    各scaleを並列に処理したい
+      computeなら割といけそう
     別々のshaderで処理してもよいか
       remap, filter_1d(convolution), threshold, boolean_ops
+  wgpu.FilterMode.nearest が効いてない
+  compute shader
+    textureSampleが使えないのでテクスチャの任意の点を取るのが面倒くさい
+
 
 
 Background

@@ -59,3 +59,31 @@ class RenderShaderBinding:
 
     def create_bind_group(self, entries: list[dict[str, typing.Any]]) -> wgpu.GPUBindGroup:
         return self.device.create_bind_group(layout=self.bind_group_layout, entries=entries)
+
+
+class ComputeShaderBinding:
+    def __init__(
+        self,
+        device: wgpu.GPUDevice,
+        source: str,
+        entry_point: str,
+        bind_layout_entries: list[dict[str, typing.Any]],
+    ):
+        self.device = device
+        self.source = source
+        self.shader = device.create_shader_module(code=source)
+        self.entry_point = entry_point
+        self.bind_group_layout = device.create_bind_group_layout(entries=bind_layout_entries)
+        self.pipeline_layout = device.create_pipeline_layout(bind_group_layouts=[self.bind_group_layout])
+
+    def create_compute_pipeline(self) -> wgpu.GPUComputePipeline:
+        return self.device.create_compute_pipeline(
+            layout=self.pipeline_layout,
+            compute={
+                "module": self.shader,
+                "entry_point": self.entry_point
+            },
+        )
+
+    def create_bind_group(self, entries: list[dict[str, typing.Any]]) -> wgpu.GPUBindGroup:
+        return self.device.create_bind_group(layout=self.bind_group_layout, entries=entries)

@@ -11,6 +11,7 @@ class TextureShader(wgpu_util.RenderShaderBinding):
         self,
         device: wgpu.GPUDevice,
         src_format: wgpu.TextureFormat,
+        sampler_type: wgpu.SamplerBindingType = wgpu.SamplerBindingType.filtering,
     ):
         header = open(os.path.join(os.path.dirname(__file__), 'header.wgsl'), "r").read()
         vs_source = open(os.path.join(os.path.dirname(__file__), 'vert_full2d.wgsl'), "r").read()
@@ -21,7 +22,7 @@ class TextureShader(wgpu_util.RenderShaderBinding):
                 "binding": 0,
                 "visibility": wgpu.ShaderStage.FRAGMENT,
                 "sampler": {
-                    "type": wgpu.SamplerBindingType.filtering,
+                    "type": sampler_type,
                 }
             },
             {

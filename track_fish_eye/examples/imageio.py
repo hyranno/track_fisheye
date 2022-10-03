@@ -8,7 +8,7 @@ from wgpu.gui.auto import run
 
 device, context = wgpu_util.create_canvas("image io example")
 
-texture = cv_util.imread_texture("resources/image.png", device)
+texture = cv_util.imread_texture("resources/logo.png", device)
 shape = texture.size[1], texture.size[0], 4
 # cv_util.imwrite_texture(texture, shape, "image_out.png", device)
 

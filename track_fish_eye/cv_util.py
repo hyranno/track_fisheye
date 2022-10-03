@@ -5,8 +5,6 @@ import numpy
 import wgpu
 import wgpu.backends.rs  # noqa: F401, Select Rust backend
 
-import typing
-
 
 def cvtype(mat: numpy.ndarray) -> int:
     cvdepth: dict[str, int] = {
@@ -24,10 +22,10 @@ def cvtype(mat: numpy.ndarray) -> int:
 
 
 def cvimage_to_texture(
-    img: numpy.ndarray[typing.Any, numpy.dtype[numpy.uint8]],
+    img: numpy.ndarray[any, numpy.dtype[numpy.uint8]],
     device: wgpu.GPUDevice
 ) -> wgpu.GPUTexture:
-    texture_data = img.data
+    texture_data = numpy.ascontiguousarray(img[:, :, [2, 1, 0, 3]]).data  # bgra to rgba
     texture_size: tuple[int, int, int] = img.shape[1], img.shape[0], 1
     texture = device.create_texture(
         size=texture_size,
@@ -60,7 +58,7 @@ def texture_to_cvimage(
     texture: wgpu.GPUTexture,  # 8unorm
     shape: tuple[int, int, int],
     device: wgpu.GPUDevice
-) -> numpy.ndarray[typing.Any, numpy.dtype[numpy.uint8]]:
+) -> numpy.ndarray[any, numpy.dtype[numpy.uint8]]:
     texture_data_layout = {
         "offset": 0,
         "bytes_per_row": shape[1] * shape[2],  # texture_data.strides[0],
@@ -76,7 +74,8 @@ def texture_to_cvimage(
         texture_data_layout,
         texture.size,
     )
-    return numpy.asarray(dest_image_data).reshape(shape)
+    array_bgra = numpy.asarray(dest_image_data).reshape(shape)[:, :, [2, 1, 0, 3]]
+    return numpy.ascontiguousarray(array_bgra)  # to bgra
 
 
 def imread_texture(path: str, device: wgpu.GPUDevice) -> wgpu.GPUTexture:
