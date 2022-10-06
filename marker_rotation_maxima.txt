@@ -1,5 +1,4 @@
 /* batch(filepath); */
-/* batch("C:/Users/akira404/Desktop/書き物/ストーリーを含まない考察系/VtuberSystem/marker_rotation_maxima.txt"); */
 
 kill(all)$
 

@@ -1,6 +1,7 @@
 
 import cv2
 import numpy
+import quaternion
 
 import wgpu
 import wgpu.backends.rs  # noqa: F401, Select Rust backend
@@ -84,3 +85,56 @@ def imread_texture(path: str, device: wgpu.GPUDevice) -> wgpu.GPUTexture:
 
 def imwrite_texture(texture: wgpu.GPUTexture, shape: tuple[int, int, int], path: str, device: wgpu.GPUDevice) -> None:
     cv2.imwrite(path, texture_to_cvimage(texture, shape, device))
+
+
+def draw_wireframe_cube(
+    dest: numpy.ndarray,
+    size: float,
+    position: tuple[float, float],
+    rotation: numpy.quaternion
+) -> None:
+    pts = quaternion.rotate_vectors(rotation, [
+        [0, 0, 0],
+        [0, 0, 1],
+        [0, 1, 0],
+        [0, 1, 1],
+        [1, 0, 0],
+        [1, 0, 1],
+        [1, 1, 0],
+        [1, 1, 1],
+    ])
+    pos3d = numpy.array([position[0], position[1], 0])
+    points = [numpy.array(v) * size + pos3d for v in pts]
+    xlines = [
+        (points[0], points[4]),
+        (points[1], points[5]),
+        (points[2], points[6]),
+        (points[3], points[7]),
+    ]
+    ylines = [
+        (points[0], points[2]),
+        (points[1], points[3]),
+        (points[4], points[6]),
+        (points[5], points[7]),
+    ]
+    zlines = [
+        (points[0], points[1]),
+        (points[2], points[3]),
+        (points[4], points[5]),
+        (points[6], points[7]),
+    ]
+    for line in xlines:
+        color = (0, 0, 255, 255)
+        p0 = (int(line[0][0]), int(line[0][1]))
+        p1 = (int(line[1][0]), int(line[1][1]))
+        cv2.line(dest, p0, p1, color, 2)
+    for line in ylines:
+        color = (0, 255, 0, 255)
+        p0 = (int(line[0][0]), int(line[0][1]))
+        p1 = (int(line[1][0]), int(line[1][1]))
+        cv2.line(dest, p0, p1, color, 2)
+    for line in zlines:
+        color = (255, 0, 0, 255)
+        p0 = (int(line[0][0]), int(line[0][1]))
+        p1 = (int(line[1][0]), int(line[1][1]))
+        cv2.line(dest, p0, p1, color, 2)

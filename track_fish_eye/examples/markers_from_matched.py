@@ -7,6 +7,7 @@ import quick_track_marker
 import shader.pattern_pairing
 import shader.draw_points
 
+import cv2
 import array
 import math
 import numpy
@@ -160,10 +161,6 @@ def draw(device: wgpu.GPUDevice):
 
 draw(device)
 
-# texture_util.draw_texture_on_texture(points_view.texture, context_texture_view, context_texture_format, device)
-
-# run()
-
 shape = pairing_view.texture.size[1], pairing_view.texture.size[0], 4  # for numpy.ndarray
 pairing_val = cv_util.texture_to_cvimage(pairing_view.texture, shape, device)[:, :, 0]
 pairing_sorted_indices = numpy.argsort(pairing_val, axis=1)
@@ -178,11 +175,17 @@ for i in range(len(points_position)):
     if ((threshold < axis0_val) and (threshold < axis1_val)):
         marker = quick_track_marker.QuickTrackMarker(
             points_position[i],
-            points_rotation[axis0_index],
-            points_rotation[axis1_index],
+            (points_rotation[axis0_index], points_rotation[axis1_index]),
         )
         markers.append(marker)
 
 # print(points_position)
 # print(points_rotation)
 print(markers)
+
+img_preview_marker = cv2.imread("resources/image_preproced.png", -1)
+for m in markers:
+    cv_util.draw_wireframe_cube(img_preview_marker, m.size, m.points2d[0], m.quat)
+texture_preview_marker = cv_util.cvimage_to_texture(img_preview_marker, device)
+texture_util.draw_texture_on_texture(texture_preview_marker, context_texture_view, context_texture_format, device)
+run()

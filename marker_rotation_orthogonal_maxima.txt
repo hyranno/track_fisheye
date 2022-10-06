@@ -1,0 +1,64 @@
+
+kill(all)$
+
+load(vect)$
+load(grobner)$
+solveradcan : true$
+solveexplicit : false$
+
+flatten_mat(m) := flatten(args(m))$
+elem(m, i) := flatten_mat(m)[i]$
+colvec(l) := transpose(matrix(l))$
+mat(l) := apply('matrix,l)$
+cros(u,v) := block(
+  [uf, vf],
+  uf : flatten_mat(u),
+  vf : flatten_mat(v),
+  [uf[2]*vf[3]-uf[3]*vf[2], uf[3]*vf[1]-uf[1]*vf[3], uf[1]*vf[2]-uf[2]*vf[1]]
+)$
+
+calc_dcm(ax1, ax2) := block( /* ax1, ax2 should be normalized */
+  [af1, af2],
+  af1 : flatten_mat(ax1),
+  af2 : flatten_mat(ax2),
+  af3 : flatten_mat(cros(af1,af2)),
+  mat([
+    [af1[1], af2[1], af3[1]],
+    [af1[2], af2[2], af3[2]],
+    [af1[3], af2[3], af3[3]]
+  ])
+)$
+
+
+p0 : colvec([0,0,0])$
+pa : colvec([c,0,0])$
+pb : colvec([0,c,0])$
+declare(c, real)$
+assume(c > 0)$
+
+/* vector from p0 */
+p1 : colvec([x1, y1, sqrt(c^2-(x1^2+y1^2))])$
+p2 : colvec([x2, y2, sqrt(c^2-(x2^2+y2^2))])$
+
+/*
+p1.p2 = 0
+  x1*x2 + y1*y2 = -sqrt(c^2-(x1^2+y1^2))*sqrt(c^2-(x2^2+y2^2))
+ */
+vars1 : [c]$
+eqns1 : [(x1*x2 + y1*y2)^2 = (c^2-(x1^2+y1^2))*(c^2-(x2^2+y2^2))]$
+ans1 : solve(eqns1, vars1)$
+eq_c : rootscontract(ans1)[2]$
+
+c_simp : sqrt(
+  (
+    sqrt(
+      (x1^2 + x2^2 +y1^2 +y2^2)^2 - 4*(x1*y2 -x2*y1)^2
+    ) +y2^2 +y1^2 +x2^2 +x1^2
+  )/2
+);
+ev(rootscontract(expand(rootscontract(
+  rhs(eq_c) = c_simp
+))), pred);
+
+
+/* dcm : calc_dcm(p1/c, p2/c); */

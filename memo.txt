@@ -30,19 +30,17 @@ TODO:
     marker detection
       make pairs of position + 2 rotation
         convolution 1d on texture between position-rotation
-          textureSampleがcomputeだと使えなくて面倒くさい
-          fragmentの出力先をr32floatでnum_positions*num_rotationsのtextureにしてもええか
         pick 2 max
         filter (threshold < 2 max)
-  //
   python
     marker to quaternion + translation
-    perspective
-    ////
-    似非コードの印刷と撮影
-    x-mean のwgpu実行
-      分割に最小距離条件も加えたい
-    python - wgpu を ProtocolBuffer あたりでラップできないか?
+    計算結果の表示
+  //
+  似非コードの印刷と撮影
+  x-mean のwgpu実行
+    分割に最小距離条件も加えたい
+  orthogonalに近似せずperspectiveのまま計算
+  python - wgpu を ProtocolBuffer あたりでラップできないか?
 
 
 リファクタリング
@@ -54,6 +52,9 @@ TODO:
     shape ではなく num_channels を取る
 
 実装メモ
+  z座標について
+    z座標を得るには焦点距離などが必要
+    既知でない場合はカメラキャリブレーションが必要になってくる
   match_multi_scale
     各scaleを並列に処理したい
       computeなら割といけそう
