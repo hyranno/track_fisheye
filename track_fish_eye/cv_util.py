@@ -95,16 +95,20 @@ def draw_wireframe_cube(
 ) -> None:
     pts = quaternion.rotate_vectors(rotation, [
         [0, 0, 0],
-        [0, 0, 1],
+        [0, 0, -1],
         [0, 1, 0],
-        [0, 1, 1],
+        [0, 1, -1],
         [1, 0, 0],
-        [1, 0, 1],
+        [1, 0, -1],
         [1, 1, 0],
-        [1, 1, 1],
+        [1, 1, -1],
     ])
     pos3d = numpy.array([position[0], position[1], 0])
-    points = [numpy.array(v) * size + pos3d for v in pts]
+    points = [(numpy.array(v) * size + pos3d)[0:2].astype(int) for v in pts]
+    cv2.fillConvexPoly(dest, numpy.array([points[0], points[2], points[6], points[4]]), (100, 100, 100, 255))
+    xcolor = (0, 0, 255, 255)
+    ycolor = (0, 255, 0, 255)
+    zcolor = (255, 0, 0, 255)
     xlines = [
         (points[0], points[4]),
         (points[1], points[5]),
@@ -123,18 +127,14 @@ def draw_wireframe_cube(
         (points[4], points[5]),
         (points[6], points[7]),
     ]
-    for line in xlines:
-        color = (0, 0, 255, 255)
-        p0 = (int(line[0][0]), int(line[0][1]))
-        p1 = (int(line[1][0]), int(line[1][1]))
-        cv2.line(dest, p0, p1, color, 2)
-    for line in ylines:
-        color = (0, 255, 0, 255)
-        p0 = (int(line[0][0]), int(line[0][1]))
-        p1 = (int(line[1][0]), int(line[1][1]))
-        cv2.line(dest, p0, p1, color, 2)
+    cv2.line(dest, xlines[0][0], xlines[0][1], xcolor, 2)
+    cv2.line(dest, xlines[2][0], xlines[2][1], xcolor, 2)
+    cv2.line(dest, ylines[0][0], ylines[0][1], ycolor, 2)
+    cv2.line(dest, ylines[2][0], ylines[2][1], ycolor, 2)
     for line in zlines:
         color = (255, 0, 0, 255)
-        p0 = (int(line[0][0]), int(line[0][1]))
-        p1 = (int(line[1][0]), int(line[1][1]))
-        cv2.line(dest, p0, p1, color, 2)
+        cv2.line(dest, line[0], line[1], color, 2)
+    cv2.line(dest, xlines[1][0], xlines[1][1], xcolor, 2)
+    cv2.line(dest, xlines[3][0], xlines[3][1], xcolor, 2)
+    cv2.line(dest, ylines[1][0], ylines[1][1], ycolor, 2)
+    cv2.line(dest, ylines[3][0], ylines[3][1], ycolor, 2)

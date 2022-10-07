@@ -3,19 +3,6 @@ import numpy
 import quaternion
 
 
-def to_vec3d(a0: tuple[float, float], a1: tuple[float, float]) -> list[float, numpy.ndarray, numpy.ndarray]:
-    return [c, v0, v1]
-
-
-def to_dcm(a0: tuple[float, float, float], a1: tuple[float, float, float]) -> numpy.ndarray:
-    a2 = numpy.cross(a0, a1)
-    return numpy.array([
-        [a0[0], a1[0], a2[0]],
-        [a0[1], a1[1], a2[1]],
-        [a0[2], a1[2], a2[2]],
-    ])
-
-
 class QuickTrackMarker:
     def __init__(
         self,

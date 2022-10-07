@@ -163,10 +163,10 @@ draw(device)
 
 shape = pairing_view.texture.size[1], pairing_view.texture.size[0], 4  # for numpy.ndarray
 pairing_val = cv_util.texture_to_cvimage(pairing_view.texture, shape, device)[:, :, 0]
-pairing_sorted_indices = numpy.argsort(pairing_val, axis=1)
+pairing_sorted_indices = numpy.argsort(pairing_val, axis=1)[::-1]
 
 markers = []
-threshold = 127
+threshold = 80
 for i in range(len(points_position)):
     axis0_index = pairing_sorted_indices[i][0]
     axis1_index = pairing_sorted_indices[i][1]
@@ -181,9 +181,9 @@ for i in range(len(points_position)):
 
 # print(points_position)
 # print(points_rotation)
-print(markers)
+# print(markers)
 
-img_preview_marker = cv2.imread("resources/image_preproced.png", -1)
+img_preview_marker = cv2.imread("resources/image.png", -1)
 for m in markers:
     cv_util.draw_wireframe_cube(img_preview_marker, m.size, m.points2d[0], m.quat)
 texture_preview_marker = cv_util.cvimage_to_texture(img_preview_marker, device)

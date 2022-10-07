@@ -35,8 +35,9 @@ TODO:
   python
     marker to quaternion + translation
     計算結果の表示
-  //
   似非コードの印刷と撮影
+  //
+  リファクタリング
   x-mean のwgpu実行
     分割に最小距離条件も加えたい
   orthogonalに近似せずperspectiveのまま計算
@@ -50,6 +51,7 @@ TODO:
     閾値処理を match_result_integrate へ移す
   cv_util.texture_to_cvimage
     shape ではなく num_channels を取る
+  入力テクスチャからマーカーまで一括処理(marker_detector)
 
 実装メモ
   z座標について
@@ -58,7 +60,7 @@ TODO:
   match_multi_scale
     各scaleを並列に処理したい
       computeなら割といけそう
-    別々のshaderで処理してもよいか
+    別々のshaderに処理を分割してもよいか
       remap, filter_1d(convolution), threshold, boolean_ops
   wgpu.FilterMode.nearest が効いてない
   compute shader

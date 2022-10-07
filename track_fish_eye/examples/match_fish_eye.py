@@ -102,22 +102,23 @@ match_pipeline = match_shader.create_render_pipeline([
         "blend": texture_util.BLEND_STATE_REPLACE,
     },
 ])
+match_threshold = 0.6
 match_bind_vertical = match_shader.create_bind_group(
     view_src,
     linear_sampler,
     kernel,
-    0.7,
+    match_threshold,
     (0.0, 0.05),
-    2.0,
+    4.0,
     1.1,
 )
 match_bind_horizontal = match_shader.create_bind_group(
     view_src,
     linear_sampler,
     kernel,
-    0.7,
+    match_threshold,
     (0.05, 0.0),
-    2.0,
+    4.0,
     1.1,
 )
 
