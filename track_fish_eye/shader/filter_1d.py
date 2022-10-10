@@ -46,34 +46,27 @@ class Filter1dShader(wgpu_util.RenderShaderBinding):
             {
                 "binding": 2,
                 "visibility": wgpu.ShaderStage.FRAGMENT,
-                "buffer": {
-                    "type": wgpu.BufferBindingType.uniform,
-                }
-            },
-            {
-                "binding": 3,
-                "visibility": wgpu.ShaderStage.FRAGMENT,
                 "texture": {
                     "sample_type": texture_util.texture_type_to_sample_type(kernel_format),
                     "view_dimension": wgpu.TextureViewDimension.d1,
                 },
             },
             {
-                "binding": 4,
+                "binding": 3,
                 "visibility": wgpu.ShaderStage.FRAGMENT,
                 "sampler": {
                     "type": kernel_sampler_type,  # wgpu.SamplerBindingType.non_filtering,
                 }
             },
             {
-                "binding": 5,
+                "binding": 4,
                 "visibility": wgpu.ShaderStage.FRAGMENT,
                 "buffer": {
                     "type": wgpu.BufferBindingType.uniform,
                 }
             },
             {
-                "binding": 6,
+                "binding": 5,
                 "visibility": wgpu.ShaderStage.FRAGMENT,
                 "buffer": {
                     "type": wgpu.BufferBindingType.uniform,
@@ -99,16 +92,11 @@ class Filter1dShader(wgpu_util.RenderShaderBinding):
         self,
         src_view: wgpu.GPUTextureView,
         src_sampler: wgpu.GPUSampler,
-        resolution: tuple[int, int],
         kernel_view: wgpu.GPUTextureView,
         kernel_sampler: wgpu.GPUSampler,
         range: tuple[float, float],
         normalize_mode: NormalizerMode,
     ):
-        buffer_resolution = self.device.create_buffer_with_data(
-            data=(ctypes.c_uint32 * 2)(resolution[0], resolution[1]),
-            usage=wgpu.BufferUsage.UNIFORM
-        )
         buffer_range = self.device.create_buffer_with_data(
             data=(ctypes.c_float * 2)(range[0], range[1]),
             usage=wgpu.BufferUsage.UNIFORM
@@ -120,11 +108,10 @@ class Filter1dShader(wgpu_util.RenderShaderBinding):
         entries = [
             {"binding": 0, "resource": src_view},
             {"binding": 1, "resource": src_sampler},
-            {"binding": 2, "resource": {"buffer": buffer_resolution, "offset": 0, "size": buffer_resolution.size}},
-            {"binding": 3, "resource": kernel_view},
-            {"binding": 4, "resource": kernel_sampler},
-            {"binding": 5, "resource": {"buffer": buffer_range, "offset": 0, "size": buffer_range.size}},
-            {"binding": 6, "resource": {
+            {"binding": 2, "resource": kernel_view},
+            {"binding": 3, "resource": kernel_sampler},
+            {"binding": 4, "resource": {"buffer": buffer_range, "offset": 0, "size": buffer_range.size}},
+            {"binding": 5, "resource": {
                 "buffer": buffer_normalize_mode, "offset": 0, "size": buffer_normalize_mode.size
             }},
         ]

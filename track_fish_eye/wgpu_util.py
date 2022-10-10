@@ -24,6 +24,29 @@ def create_sized_canvas(size: tuple[int, int], title: str) -> tuple[wgpu.GPUDevi
     return get_context(canvas)
 
 
+def push_2drender_pass(
+    encoder: wgpu.GPUCommandEncoder,
+    target: wgpu.GPUTextureView,
+    pipeline: wgpu.GPURenderPipeline,
+    bind: wgpu.GPUBindGroup,
+):
+    render_pass = encoder.begin_render_pass(
+        color_attachments=[
+            {
+                "view": target,
+                "resolve_target": None,
+                "clear_value": (0, 0, 0, 1),
+                "load_op": wgpu.LoadOp.clear,
+                "store_op": wgpu.StoreOp.store,
+            }
+        ],
+    )
+    render_pass.set_pipeline(pipeline)
+    render_pass.set_bind_group(0, bind, [], 0, 0)
+    render_pass.draw(4, 1, 0, 0)
+    render_pass.end()
+
+
 class RenderShaderBinding:
     def __init__(
         self,

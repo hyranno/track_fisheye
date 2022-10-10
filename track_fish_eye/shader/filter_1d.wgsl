@@ -1,10 +1,9 @@
 @group(0) @binding(0) var tex: texture_2d<f32>;
 @group(0) @binding(1) var tex_samp: sampler;
-@group(0) @binding(2) var<uniform> resolution: Vec2Container_u32;
-@group(0) @binding(3) var kernel: texture_1d<f32>;
-@group(0) @binding(4) var kernel_samp: sampler;
-@group(0) @binding(5) var<uniform> range: Vec2Container_f32;
-@group(0) @binding(6) var<uniform> normalizing: U32Container;
+@group(0) @binding(2) var kernel: texture_1d<f32>;
+@group(0) @binding(3) var kernel_samp: sampler;
+@group(0) @binding(4) var<uniform> range: Vec2Container_f32;
+@group(0) @binding(5) var<uniform> normalizing: U32Container;
 
 fn normalizer(num_sample: u32) -> f32 {  // mode is enum
   var result = 1.0;
@@ -42,8 +41,8 @@ fn filter_1d(uv: vec2<f32>) -> vec4<f32> {
   let half_range: vec2<f32> = range.val / 2.0;
   let start: vec2<f32> = uv - half_range;
   let end: vec2<f32> = uv + half_range;
-  let start_px: vec2<f32> = start * vec2<f32>(resolution.val);
-  let end_px: vec2<f32> = end * vec2<f32>(resolution.val);
+  let start_px: vec2<f32> = start * vec2<f32>(textureDimensions(tex));
+  let end_px: vec2<f32> = end * vec2<f32>(textureDimensions(tex));
   let num_sample: u32 = u32(floor(distance( start_px, end_px )) + 1.0);
   return weighted_sum_1d(start, end, num_sample);
 }

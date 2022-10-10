@@ -56,10 +56,11 @@ def cvimage_to_texture(
 
 
 def texture_to_cvimage(
+    device: wgpu.GPUDevice,
     texture: wgpu.GPUTexture,  # 8unorm
-    shape: tuple[int, int, int],
-    device: wgpu.GPUDevice
+    num_channels: int,
 ) -> numpy.ndarray[any, numpy.dtype[numpy.uint8]]:
+    shape = texture.size[1], texture.size[0], num_channels
     texture_data_layout = {
         "offset": 0,
         "bytes_per_row": shape[1] * shape[2],  # texture_data.strides[0],
@@ -83,8 +84,8 @@ def imread_texture(path: str, device: wgpu.GPUDevice) -> wgpu.GPUTexture:
     return cvimage_to_texture(cv2.imread(path, -1), device)
 
 
-def imwrite_texture(texture: wgpu.GPUTexture, shape: tuple[int, int, int], path: str, device: wgpu.GPUDevice) -> None:
-    cv2.imwrite(path, texture_to_cvimage(texture, shape, device))
+def imwrite_texture(texture: wgpu.GPUTexture, num_channels: int, path: str, device: wgpu.GPUDevice) -> None:
+    cv2.imwrite(path, texture_to_cvimage(device, texture, num_channels))
 
 
 def draw_wireframe_cube(
