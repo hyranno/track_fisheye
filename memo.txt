@@ -46,11 +46,15 @@ TODO:
 
 リファクタリング
   match_result_integrate
-    入力テクスチャをarrayで受け取る
-  match_multi_scale
+    positiveをr, negativeをg に出力
+  match1d_multi_scale
     各scaleを並列に処理
-    min, max 両方を別のチャネルに出力してもよさそう
-    閾値処理を match_result_integrate へ移す
+      shader.match1d
+    maxをr, minをg のチャネルに集計
+      shader.integrage_minmax
+      入力テクスチャをarrayで受け取りたいが無理そうなので複数passで処理
+        arrays of texture are not supported in current wgsl
+  encoderをfinishしない
 
 実装メモ
   z座標について

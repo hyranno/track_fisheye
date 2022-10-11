@@ -15,17 +15,25 @@ from wgpu.gui.auto import run
 
 class MarkerDetector:
     def __init__(self, device: wgpu.GPUDevice, src_view: wgpu.GPUTextureView):
+        self.device = device
         texture_size = src_view.texture.size
         self.preproced_view = texture_util.create_buffer_texture(device, texture_size).create_view()
         self.matched_view = texture_util.create_buffer_texture(device, texture_size).create_view()
 
-        self.preprocess_filter = SmoothThresholdFilter(device, src_view, self.preproced_view.texture.format)
-        self.pattern_matcher = FisheyeDetector(device, self.preproced_view, self.matched_view.texture.format)
+        self.preprocess_filter = SmoothThresholdFilter(
+            device, src_view, self.preproced_view, self.preproced_view.texture.format
+        )
+        self.pattern_matcher = FisheyeDetector(
+            device, self.preproced_view, self.matched_view, self.matched_view.texture.format
+        )
         self.pair_finder = MarkerPairFinder(device, self.preproced_view, self.matched_view)
 
+        self.match_command_buffers = []
+        self.match_command_buffers.extend(self.preprocess_filter.command_buffers)
+        self.match_command_buffers.extend(self.pattern_matcher.command_buffers)
+
     def detect(self) -> list[QuickTrackMarker]:
-        self.preprocess_filter.draw(self.preproced_view)
-        self.pattern_matcher.draw(self.matched_view)
+        self.device.queue.submit(self.match_command_buffers)
         markers = self.pair_finder.find()
         return markers
 

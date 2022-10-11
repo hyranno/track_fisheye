@@ -1,13 +1,12 @@
 import os
 import wgpu
-import numpy
 
 # import mymodule
 import wgpu_util
 import texture_util
 
 
-class MatchResultIntegrateShader(wgpu_util.RenderShaderBinding):
+class IntegrateMinMaxShader(wgpu_util.RenderShaderBinding):
     def __init__(
         self,
         device: wgpu.GPUDevice,
@@ -15,7 +14,7 @@ class MatchResultIntegrateShader(wgpu_util.RenderShaderBinding):
     ):
         header = open(os.path.join(os.path.dirname(__file__), 'header.wgsl'), "r").read()
         vs_source = open(os.path.join(os.path.dirname(__file__), 'vert_full2d.wgsl'), "r").read()
-        fs_source = open(os.path.join(os.path.dirname(__file__), 'match_result_integrate.wgsl'), "r").read()
+        fs_source = open(os.path.join(os.path.dirname(__file__), 'integrate_minmax.wgsl'), "r").read()
         source = header + vs_source + fs_source
         bind_entries = [
             {
@@ -41,13 +40,6 @@ class MatchResultIntegrateShader(wgpu_util.RenderShaderBinding):
                     "type": wgpu.SamplerBindingType.filtering,
                 }
             },
-            {
-                "binding": 3,
-                "visibility": wgpu.ShaderStage.FRAGMENT,
-                "buffer": {
-                    "type": wgpu.BufferBindingType.uniform,
-                }
-            },
         ]
         vertex = {
             "entry_point": "vs_main",
@@ -68,16 +60,10 @@ class MatchResultIntegrateShader(wgpu_util.RenderShaderBinding):
         view0: wgpu.GPUTextureView,
         view1: wgpu.GPUTextureView,
         sampler: wgpu.GPUSampler,
-        threshold: float,
     ):
-        buffer_threshold = self.device.create_buffer_with_data(
-            data=numpy.array([threshold], dtype=numpy.dtype('<f'), order='C'),
-            usage=wgpu.BufferUsage.UNIFORM
-        )
         entries = [
             {"binding": 0, "resource": view0},
             {"binding": 1, "resource": view1},
             {"binding": 2, "resource": sampler},
-            {"binding": 3, "resource": {"buffer": buffer_threshold, "offset": 0, "size": buffer_threshold.size}},
         ]
         return super().create_bind_group(entries)

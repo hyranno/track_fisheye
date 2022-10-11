@@ -56,9 +56,9 @@ class MarkerPairFinder:
     def matched_to_points(self) -> tuple[numpy.ndarray, numpy.ndarray]:
         src_np = cv_util.texture_to_cvimage(self.device, self.matched_view.texture, 4)
 
-        threshold = 50
-        positives = list(zip(*numpy.where(src_np[:, :, 0] > 127+threshold)))
-        negatives = list(zip(*numpy.where(src_np[:, :, 0] < 127-threshold)))
+        threshold = 127
+        positives = list(zip(*numpy.where(threshold < src_np[:, :, 2])))
+        negatives = list(zip(*numpy.where(threshold < src_np[:, :, 1])))
 
         xm_positives = xmcluster(positives)
         xm_negatives = xmcluster(negatives)

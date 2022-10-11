@@ -63,8 +63,16 @@ def kernel1d_texture(device: wgpu.GPUDevice, kernel: numpy.ndarray) -> wgpu.GPUT
 
 
 class SmoothThresholdFilter:
-    def __init__(self, device: wgpu.GPUDevice, src_view: wgpu.GPUTextureView, dest_format: wgpu.TextureFormat):
+    def __init__(
+        self,
+        device: wgpu.GPUDevice,
+        src_view: wgpu.GPUTextureView,
+        dest_view: wgpu.GPUTextureView,
+        dest_format: wgpu.TextureFormat,
+    ):
         self.device = device
+        self.command_buffers = []
+        command_encoder = self.device.create_command_encoder()
         self.texture_size = src_view.texture.size
         linear_sampler = device.create_sampler(min_filter="linear", mag_filter="linear")
         nearest_sampler = device.create_sampler(min_filter="nearest", mag_filter="nearest")
@@ -80,6 +88,9 @@ class SmoothThresholdFilter:
         self.grayscale_bind = self.grayscale_shader.create_bind_group(
             src_view,
             linear_sampler
+        )
+        wgpu_util.push_2drender_pass(
+            command_encoder, self.grayscale_view, self.grayscale_pipeline, self.grayscale_bind
         )
 
         self.gaussian_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
@@ -117,6 +128,12 @@ class SmoothThresholdFilter:
             (0.0, self.gaussian_kernel_size / self.texture_size[1]),
             shader.filter_1d.NormalizerMode.ONE_SUM,
         )
+        wgpu_util.push_2drender_pass(
+            command_encoder, self.gaussian_tmp_view, self.gaussian_pipeline, self.gaussian_bind_horizontal
+        )
+        wgpu_util.push_2drender_pass(
+            command_encoder, self.gaussian_view, self.gaussian_pipeline, self.gaussian_bind_vertical
+        )
 
         self.smooth_threshold_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
         self.smooth_threshold_shader = shader.smooth_threshold.SmoothThresholdShader(
@@ -135,26 +152,16 @@ class SmoothThresholdFilter:
             self.gaussian_view,
             (-0.1, 0.1)
         )
-
-        return
-
-    def draw(self, dest_view: wgpu.GPUTextureView) -> None:
-        command_encoder = self.device.create_command_encoder()
-
-        wgpu_util.push_2drender_pass(
-            command_encoder, self.grayscale_view, self.grayscale_pipeline, self.grayscale_bind
-        )
-        wgpu_util.push_2drender_pass(
-            command_encoder, self.gaussian_tmp_view, self.gaussian_pipeline, self.gaussian_bind_horizontal
-        )
-        wgpu_util.push_2drender_pass(
-            command_encoder, self.gaussian_view, self.gaussian_pipeline, self.gaussian_bind_vertical
-        )
         wgpu_util.push_2drender_pass(
             command_encoder, dest_view, self.smooth_threshold_pipeline, self.smooth_threshold_bind
         )
 
-        self.device.queue.submit([command_encoder.finish()])
+        self.command_buffers.append(command_encoder.finish())
+
+        return
+
+    def draw(self) -> None:
+        self.device.queue.submit(self.command_buffers)
 
 
 if __name__ == "__main__":

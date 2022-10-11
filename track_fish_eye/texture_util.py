@@ -25,7 +25,11 @@ def texture_type_to_sample_type(texture_format: str) -> wgpu.TextureSampleType:
     return texture_sample_type
 
 
-def create_buffer_texture(device: wgpu.GPUDevice, size: tuple[int, int, int]):
+def create_buffer_texture(
+    device: wgpu.GPUDevice,
+    size: tuple[int, int, int],
+    format: wgpu.TextureFormat = wgpu.TextureFormat.rgba8unorm,
+):
     return device.create_texture(
         size=size,
         usage=wgpu.TextureUsage.COPY_DST
@@ -33,7 +37,7 @@ def create_buffer_texture(device: wgpu.GPUDevice, size: tuple[int, int, int]):
         | wgpu.TextureUsage.TEXTURE_BINDING
         | wgpu.TextureUsage.RENDER_ATTACHMENT,
         dimension=wgpu.TextureDimension.d2,
-        format=wgpu.TextureFormat.rgba8unorm,
+        format=format,
         mip_level_count=1,
         sample_count=1,
     )
