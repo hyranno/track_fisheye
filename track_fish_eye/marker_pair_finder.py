@@ -60,11 +60,14 @@ class MarkerPairFinder:
         positives = list(zip(*numpy.where(threshold < src_np[:, :, 2])))
         negatives = list(zip(*numpy.where(threshold < src_np[:, :, 1])))
 
-        xm_positives = xmcluster(positives)
-        xm_negatives = xmcluster(negatives)
-
-        points_position = numpy.fliplr(numpy.array(xm_positives.get_centers()))
-        points_rotation = numpy.fliplr(numpy.array(xm_negatives.get_centers()))
+        points_position = numpy.array([])
+        if 0 < len(positives):
+            xm_positives = xmcluster(positives)
+            points_position = numpy.fliplr(numpy.array(xm_positives.get_centers()))
+        points_rotation = numpy.array([])
+        if 0 < len(negatives):
+            xm_negatives = xmcluster(negatives)
+            points_rotation = numpy.fliplr(numpy.array(xm_negatives.get_centers()))
 
         return (points_position, points_rotation)
 
@@ -88,13 +91,17 @@ class MarkerPairFinder:
         return pairing_val
 
     def find(self) -> list[QuickTrackMarker]:
+        markers = []
+
         points = self.matched_to_points()
         points_position = points[0]
         points_rotation = points[1]
+        if ((len(points_position) < 1) or (len(points_rotation) < 2)):
+            return markers
+
         pairing_val = self.calc_pairing_value(points_position, points_rotation)
 
         pairing_sorted_indices = numpy.argsort(pairing_val, axis=1)[::-1]
-        markers = []
         threshold = 80
         for i in range(len(points_position)):
             axis0_index = pairing_sorted_indices[i][0]

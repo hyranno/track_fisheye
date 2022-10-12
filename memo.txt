@@ -37,37 +37,26 @@ TODO:
     計算結果の表示
   似非コードの印刷と撮影
   //
-  リファクタリング
+  リアルタイムでの実行
+    cvimage_to_texture を既存のテクスチャにコピー
+      デフォルト(None)なら新しいテクスチャを確保
   x-mean のwgpu実行
     分割に最小距離条件も加えたい
   orthogonalに近似せずperspectiveのまま計算
   python - wgpu を ProtocolBuffer あたりでラップできないか?
 
 
-リファクタリング
-  match_result_integrate
-    positiveをr, negativeをg に出力
-  match1d_multi_scale
-    各scaleを並列に処理
-      shader.match1d
-    maxをr, minをg のチャネルに集計
-      shader.integrage_minmax
-      入力テクスチャをarrayで受け取りたいが無理そうなので複数passで処理
-        arrays of texture are not supported in current wgsl
-  encoderをfinishしない
-
 実装メモ
   z座標について
     z座標を得るには焦点距離などが必要
     既知でない場合はカメラキャリブレーションが必要になってくる
   match_multi_scale
-    各scaleを並列に処理したい
-      computeなら割といけそう
     別々のshaderに処理を分割してもよいか
       remap, filter_1d(convolution), threshold, boolean_ops
   wgpu.FilterMode.nearest が効いてない
   compute shader
     textureSampleが使えないのでテクスチャの任意の点を取るのが面倒くさい
+  arrays of texture are not supported in current wgsl
 
 
 
