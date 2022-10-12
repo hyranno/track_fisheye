@@ -1,4 +1,12 @@
 [[package]]
+name = "aioconsole"
+version = "0.5.1"
+description = "Asynchronous console and interfaces for asyncio"
+category = "main"
+optional = false
+python-versions = ">=3.7"
+
+[[package]]
 name = "atomicwrites"
 version = "1.4.1"
 description = "Atomic file writes."
@@ -445,9 +453,13 @@ jupyter = ["jupyter-rfb (>=0.3.1)"]
 [metadata]
 lock-version = "1.1"
 python-versions = "3.10"
-content-hash = "cf7349851325ae29eb1c9e8da3dc8af96449df89ea0459a93b1c15931ab7da96"
+content-hash = "b6342cd478d9c0fbcb3dc8b9e18a8b11a83bf5a03742fc48b6593ffa35b3def4"
 
 [metadata.files]
+aioconsole = [
+    {file = "aioconsole-0.5.1-py3-none-any.whl", hash = "sha256:a0288be63d47ec5fd153f284477a1c9327c8f8e6b193d7cf0b2a8d1576a31589"},
+    {file = "aioconsole-0.5.1.tar.gz", hash = "sha256:c8ddd9fd21db71ea51fb9b0d20d21d11c409c92988edf07c935d705fa60e026b"},
+]
 atomicwrites = [
     {file = "atomicwrites-1.4.1.tar.gz", hash = "sha256:81b2c9071a49367a7f770170e5eec8cb66567cfbbc8c73d20ce5ca4a8d71cf11"},
 ]

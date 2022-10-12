@@ -22,7 +22,6 @@ class MultiScaleMatcher1d:
         scale_step: float,
     ):
         self.device = device
-        self.command_buffers = []
         self.texture_size = src_view.texture.size
         linear_sampler = device.create_sampler(min_filter="linear", mag_filter="linear")
         nearest_sampler = device.create_sampler(min_filter="nearest", mag_filter="nearest")
@@ -48,12 +47,6 @@ class MultiScaleMatcher1d:
             self.match1d_shader.create_bind_group(src_view, linear_sampler, kernel, direction * r)
             for r in self.ranges
         ]
-        command_encoder = self.device.create_command_encoder()
-        for i in range(len(self.match1d_binds)):
-            wgpu_util.push_2drender_pass(
-                command_encoder, self.match1d_views[i], self.match1d_pipeline, self.match1d_binds[i]
-            )
-        self.command_buffers.append(command_encoder.finish())
 
         self.integrate_shader = IntegrateMinMaxShader(device, src_view.texture.format)
         self.integrate_pipeline = self.integrate_shader.create_render_pipeline([
@@ -76,12 +69,16 @@ class MultiScaleMatcher1d:
             )
             for i in range(len(self.ranges)-1)
         ]
-        command_encoder = self.device.create_command_encoder()
+
+    def push_passes_to(self, encoder: wgpu.GPUCommandEncoder):
+        for i in range(len(self.match1d_binds)):
+            wgpu_util.push_2drender_pass(
+                encoder, self.match1d_views[i], self.match1d_pipeline, self.match1d_binds[i]
+            )
         for i in reversed(range(len(self.integrate_binds))):
             wgpu_util.push_2drender_pass(
-                command_encoder, self.integrate_views[i], self.integrate_pipeline, self.integrate_binds[i]
+                encoder, self.integrate_views[i], self.integrate_pipeline, self.integrate_binds[i]
             )
-        self.command_buffers.append(command_encoder.finish())
 
     def draw(self) -> None:
-        self.device.queue.submit(self.command_buffers)
+        self.device.queue.submit(self.create_command_buffers())

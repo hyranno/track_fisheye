@@ -24,18 +24,20 @@ def cvtype(mat: numpy.ndarray) -> int:
 
 def cvimage_to_texture(
     img: numpy.ndarray[any, numpy.dtype[numpy.uint8]],
-    device: wgpu.GPUDevice
+    device: wgpu.GPUDevice,
+    texture: wgpu.GPUTexture = None,
 ) -> wgpu.GPUTexture:
     texture_data = numpy.ascontiguousarray(img[:, :, [2, 1, 0, 3]]).data  # bgra to rgba
     texture_size: tuple[int, int, int] = img.shape[1], img.shape[0], 1
-    texture = device.create_texture(
-        size=texture_size,
-        usage=wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.COPY_SRC | wgpu.TextureUsage.TEXTURE_BINDING,
-        dimension=wgpu.TextureDimension.d2,
-        format=wgpu.TextureFormat.rgba8unorm,
-        mip_level_count=1,
-        sample_count=1,
-    )
+    if texture is None:
+        texture = device.create_texture(
+            size=texture_size,
+            usage=wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.COPY_SRC | wgpu.TextureUsage.TEXTURE_BINDING,
+            dimension=wgpu.TextureDimension.d2,
+            format=wgpu.TextureFormat.rgba8unorm,
+            mip_level_count=1,
+            sample_count=1,
+        )
     texture_data_layout = {
         "offset": 0,
         "bytes_per_row": img.shape[1] * img.shape[2],  # texture_data.strides[0],

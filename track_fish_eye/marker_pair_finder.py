@@ -93,9 +93,7 @@ class MarkerPairFinder:
     def find(self) -> list[QuickTrackMarker]:
         markers = []
 
-        points = self.matched_to_points()
-        points_position = points[0]
-        points_rotation = points[1]
+        points_position, points_rotation = self.matched_to_points()
         if ((len(points_position) < 1) or (len(points_rotation) < 2)):
             return markers
 

@@ -32,7 +32,7 @@ class FisheyeDetector:
         dest_format: wgpu.TextureFormat
     ):
         self.device = device
-        self.command_buffers = []
+        self.dest_view = dest_view
         self.texture_size = src_view.texture.size
         linear_sampler = device.create_sampler(min_filter="linear", mag_filter="linear")
         nearest_sampler = device.create_sampler(min_filter="nearest", mag_filter="nearest")
@@ -71,8 +71,6 @@ class FisheyeDetector:
             scale_max,
             scale_step,
         )
-        self.command_buffers.extend(self.match1d_vertical.command_buffers)
-        self.command_buffers.extend(self.match1d_horizontal.command_buffers)
 
         self.match_result_shader = MatchResultIntegrateShader(
             device, self.match1d_view_vertical.texture.format
@@ -89,16 +87,19 @@ class FisheyeDetector:
             nearest_sampler,
             match_threshold,
         )
-        command_encoder = self.device.create_command_encoder()
-        wgpu_util.push_2drender_pass(
-            command_encoder, dest_view, self.match_result_pipeline, self.match_result_bind
-        )
-        self.command_buffers.append(command_encoder.finish())
 
         return
 
+    def push_passes_to(self, encoder: wgpu.GPUCommandEncoder):
+        self.match1d_vertical.push_passes_to(encoder)
+        self.match1d_horizontal.push_passes_to(encoder)
+        wgpu_util.push_2drender_pass(
+            encoder, self.dest_view, self.match_result_pipeline, self.match_result_bind
+        )
+
     def draw(self) -> None:
-        self.device.queue.submit(self.command_buffers)
+        command_encoder = self.device.create_command_encoder()
+        self.device.queue.submit([command_encoder.finish()])
 
 
 if __name__ == "__main__":

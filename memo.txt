@@ -39,14 +39,16 @@ TODO:
   //
   リアルタイムでの実行
     cvimage_to_texture を既存のテクスチャにコピー
-      デフォルト(None)なら新しいテクスチャを確保
   x-mean のwgpu実行
     分割に最小距離条件も加えたい
   orthogonalに近似せずperspectiveのまま計算
   python - wgpu を ProtocolBuffer あたりでラップできないか?
 
+z-flip してる?
 
 実装メモ
+  command_buffer
+    一度使うと消費されてしまうので実行の度に作る必要がある
   z座標について
     z座標を得るには焦点距離などが必要
     既知でない場合はカメラキャリブレーションが必要になってくる

@@ -8,7 +8,6 @@ from marker_pair_finder import MarkerPairFinder
 
 import sys
 import cv2
-import numpy
 import wgpu
 from wgpu.gui.auto import run
 
@@ -28,12 +27,11 @@ class MarkerDetector:
         )
         self.pair_finder = MarkerPairFinder(device, self.preproced_view, self.matched_view)
 
-        self.match_command_buffers = []
-        self.match_command_buffers.extend(self.preprocess_filter.command_buffers)
-        self.match_command_buffers.extend(self.pattern_matcher.command_buffers)
-
     def detect(self) -> list[QuickTrackMarker]:
-        self.device.queue.submit(self.match_command_buffers)
+        command_encoder = self.device.create_command_encoder()
+        self.preprocess_filter.push_passes_to(command_encoder)
+        self.pattern_matcher.push_passes_to(command_encoder)
+        self.device.queue.submit([command_encoder.finish()])
         markers = self.pair_finder.find()
         return markers
 
@@ -43,7 +41,7 @@ if __name__ == "__main__":
     # init image path from args or default
     path = "resources/image.png"
     print("processing " + path)
-    device, context = wgpu_util.create_sized_canvas((512, 512), "image io example")
+    device, context = wgpu_util.create_sized_canvas((512, 512), "marker detector example")
     context_texture_view = context.get_current_texture()
     context_texture_format = context.get_preferred_format(device.adapter)
 
