@@ -40,16 +40,20 @@ async def main_loop():
         src = cv2.cvtColor(frame, cv2.COLOR_BGR2BGRA)
         cv_util.cvimage_to_texture(src, device, src_view.texture)
 
-        markers = detector.detect()
-        for m in markers:
-            cv_util.draw_wireframe_cube(src, m.size, m.points2d[0], m.quat)
-        cv_util.cvimage_to_texture(src, device, preview_texture)
-        texture_util.draw_texture_on_texture(
-            preview_texture, context.get_current_texture(), context_texture_format, device
-        )
-        context.present()
+        try:
+            markers = detector.detect()
+            for m in markers:
+                cv_util.draw_tracked_marker(src, m)
+                # cv_util.draw_wireframe_cube(src, m.size, m.points2d[0], m.quat)
+            cv_util.cvimage_to_texture(src, device, preview_texture)
+            texture_util.draw_texture_on_texture(
+                preview_texture, context.get_current_texture(), context_texture_format, device
+            )
+            context.present()
+        except Exception as err:
+            print(err)
 
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0)
         is_got, frame = cap.read()
 
 

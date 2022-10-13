@@ -6,6 +6,8 @@ import quaternion
 import wgpu
 import wgpu.backends.rs  # noqa: F401, Select Rust backend
 
+from quick_track_marker import QuickTrackMarker
+
 
 def cvtype(mat: numpy.ndarray) -> int:
     cvdepth: dict[str, int] = {
@@ -141,3 +143,27 @@ def draw_wireframe_cube(
     cv2.line(dest, xlines[3][0], xlines[3][1], xcolor, 2)
     cv2.line(dest, ylines[1][0], ylines[1][1], ycolor, 2)
     cv2.line(dest, ylines[3][0], ylines[3][1], ycolor, 2)
+
+
+def draw_tracked_marker(
+    dest: numpy.ndarray,
+    marker: QuickTrackMarker,
+) -> None:
+    position = list(map(int, marker.points2d[0]))
+    thickness = 2
+    red = (0, 0, 255, 255)
+    green = (0, 255, 0, 255)
+    blue = (255, 0, 0, 255)
+    cv2.circle(dest, position, 3, red, thickness)
+    cv2.circle(dest, list(map(int, marker.points2d[1][0])), 3, green, thickness)
+    cv2.circle(dest, list(map(int, marker.points2d[1][1])), 3, green, thickness)
+    pos3d = numpy.array([marker.points2d[0][0], marker.points2d[0][1], 0])
+    axes = quaternion.rotate_vectors(marker.quat, [
+        [1, 0, 0],
+        [0, 1, 0],
+        [0, 0, -1],
+    ])
+    points = [(numpy.array(v) * marker.size + pos3d)[0:2].astype(int) for v in axes]
+    cv2.line(dest, position, points[0], red, thickness)
+    cv2.line(dest, position, points[1], green, thickness)
+    cv2.line(dest, position, points[2], blue, thickness)

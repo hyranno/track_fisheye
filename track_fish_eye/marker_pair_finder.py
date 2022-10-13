@@ -20,7 +20,7 @@ def fisheye_kernel_ndarray() -> numpy.ndarray:
     return kernel
 
 
-def fisheye_PN_kernel_ndarray(kernel_half: numpy.ndarray) -> numpy.ndarray:
+def kernel_pn(kernel_half: numpy.ndarray) -> numpy.ndarray:
     kernel = numpy.concatenate((kernel_half, -kernel_half), axis=None)
     return kernel
 
@@ -33,13 +33,23 @@ def xmcluster(points) -> xmeans.xmeans:
 
 
 class MarkerPairFinder:
-    def __init__(self, device: wgpu.GPUDevice, preproced_view: wgpu.GPUTextureView, matched_view: wgpu.GPUTextureView):
+    def __init__(
+        self,
+        device: wgpu.GPUDevice,
+        preproced_view: wgpu.GPUTextureView,
+        matched_view: wgpu.GPUTextureView,
+        pairing_threshold: int = 80,
+        kernel: numpy.ndarray = None,
+    ):
         self.device = device
         self.texture_size = matched_view.texture.size
 
         self.preproced_view = preproced_view
         self.matched_view = matched_view
-        self.kernel_pn = fisheye_PN_kernel_ndarray(fisheye_kernel_ndarray())
+        self.pairing_threshold = pairing_threshold
+        if kernel is None:
+            kernel = fisheye_kernel_ndarray()
+        self.kernel_pn = kernel_pn(kernel)
 
         self.pairing_shader = shader.pattern_pairing.PatternPairingShader(
             device, preproced_view.texture.format
@@ -56,9 +66,8 @@ class MarkerPairFinder:
     def matched_to_points(self) -> tuple[numpy.ndarray, numpy.ndarray]:
         src_np = cv_util.texture_to_cvimage(self.device, self.matched_view.texture, 4)
 
-        threshold = 127
-        positives = list(zip(*numpy.where(threshold < src_np[:, :, 2])))
-        negatives = list(zip(*numpy.where(threshold < src_np[:, :, 1])))
+        positives = list(zip(*numpy.where(127 < src_np[:, :, 2])))
+        negatives = list(zip(*numpy.where(127 < src_np[:, :, 1])))
 
         points_position = numpy.array([])
         if 0 < len(positives):
@@ -100,13 +109,12 @@ class MarkerPairFinder:
         pairing_val = self.calc_pairing_value(points_position, points_rotation)
 
         pairing_sorted_indices = numpy.argsort(pairing_val, axis=1)[::-1]
-        threshold = 80
         for i in range(len(points_position)):
             axis0_index = pairing_sorted_indices[i][0]
             axis1_index = pairing_sorted_indices[i][1]
             axis0_val = pairing_val[i][axis0_index]
             axis1_val = pairing_val[i][axis1_index]
-            if ((threshold < axis0_val) and (threshold < axis1_val)):
+            if ((self.pairing_threshold < axis0_val) and (self.pairing_threshold < axis1_val)):
                 marker = QuickTrackMarker(
                     points_position[i],
                     (points_rotation[axis0_index], points_rotation[axis1_index]),

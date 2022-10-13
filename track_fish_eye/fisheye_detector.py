@@ -29,19 +29,19 @@ class FisheyeDetector:
         device: wgpu.GPUDevice,
         src_view: wgpu.GPUTextureView,
         dest_view: wgpu.GPUTextureView,
-        dest_format: wgpu.TextureFormat
+        dest_format: wgpu.TextureFormat,
+        scale_min: float = 0.05,
+        scale_max: float = 0.4,
+        scale_step: float = 1.1,
+        match_threshold: float = 0.6,
+        kernel: numpy.ndarray = None,
     ):
         self.device = device
         self.dest_view = dest_view
         self.texture_size = src_view.texture.size
-        linear_sampler = device.create_sampler(min_filter="linear", mag_filter="linear")
         nearest_sampler = device.create_sampler(min_filter="nearest", mag_filter="nearest")
-
-        kernel = fisheye_kernel_ndarray()
-        scale_min = 0.05
-        scale_max = 0.2
-        scale_step = 1.1
-        match_threshold = 0.6
+        if kernel is None:
+            kernel = fisheye_kernel_ndarray()
 
         self.match1d_view_vertical = texture_util.create_buffer_texture(
             device, self.texture_size, wgpu.TextureFormat.rgba8snorm,

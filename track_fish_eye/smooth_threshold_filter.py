@@ -69,12 +69,13 @@ class SmoothThresholdFilter:
         src_view: wgpu.GPUTextureView,
         dest_view: wgpu.GPUTextureView,
         dest_format: wgpu.TextureFormat,
+        gaussian_kernel_size: int = 61,
+        edge: float = 0.1,
     ):
         self.device = device
         self.dest_view = dest_view
         self.texture_size = src_view.texture.size
         linear_sampler = device.create_sampler(min_filter="linear", mag_filter="linear")
-        nearest_sampler = device.create_sampler(min_filter="nearest", mag_filter="nearest")
 
         self.grayscale_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
         self.grayscale_shader = shader.grayscale.GrayscaleShader(device, src_view.texture.format)
@@ -91,10 +92,7 @@ class SmoothThresholdFilter:
 
         self.gaussian_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
         self.gaussian_tmp_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
-        self.gaussian_kernel_size = 79
-        # one big kernel will be efficient rather than repeated blur
-        # total_kernel_size = sqrt(num_loop) * kernel_size
-        kernel_array = gaussian_kernel_ndarray(self.gaussian_kernel_size)
+        kernel_array = gaussian_kernel_ndarray(gaussian_kernel_size)
         self.gaussian_kernel_view = kernel1d_texture(device, kernel_array).create_view()
         self.gaussian_shader = shader.filter_1d.Filter1dShader(
             device,
@@ -113,7 +111,7 @@ class SmoothThresholdFilter:
             linear_sampler,
             self.gaussian_kernel_view,
             linear_sampler,
-            (self.gaussian_kernel_size / self.texture_size[0], 0.0),
+            (gaussian_kernel_size / self.texture_size[0], 0.0),
             shader.filter_1d.NormalizerMode.ONE_SUM,
         )
         self.gaussian_bind_vertical = self.gaussian_shader.create_bind_group(
@@ -121,7 +119,7 @@ class SmoothThresholdFilter:
             linear_sampler,
             self.gaussian_kernel_view,
             linear_sampler,
-            (0.0, self.gaussian_kernel_size / self.texture_size[1]),
+            (0.0, gaussian_kernel_size / self.texture_size[1]),
             shader.filter_1d.NormalizerMode.ONE_SUM,
         )
 
@@ -140,7 +138,7 @@ class SmoothThresholdFilter:
             linear_sampler,
             self.grayscale_view,
             self.gaussian_view,
-            (-0.1, 0.1)
+            (-edge, edge)
         )
 
         return

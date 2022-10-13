@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     markers = detector.detect()
     for m in markers:
-        cv_util.draw_wireframe_cube(src, m.size, m.points2d[0], m.quat)
+        cv_util.draw_tracked_marker(src, m)
     texture_preview_marker = cv_util.cvimage_to_texture(src, device)
     texture_util.draw_texture_on_texture(texture_preview_marker, context_texture_view, context_texture_format, device)
     run()

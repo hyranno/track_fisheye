@@ -36,15 +36,19 @@ TODO:
     marker to quaternion + translation
     計算結果の表示
   似非コードの印刷と撮影
-  //
   リアルタイムでの実行
-    cvimage_to_texture を既存のテクスチャにコピー
+  //
+  精度やバグ
+    fpsの計算
+    smooth_threshold, fisheye_detector の結果も表示したい
+      動画で出力するか
+    sqrtにinfやNanが入ってくる?
   x-mean のwgpu実行
     分割に最小距離条件も加えたい
+  z axis flipping
   orthogonalに近似せずperspectiveのまま計算
+    orthogonalへの近似は、マーカーサイズがカメラとの距離に対して十分に小さい必要がある
   python - wgpu を ProtocolBuffer あたりでラップできないか?
-
-z-flip してる?
 
 実装メモ
   command_buffer
@@ -59,6 +63,10 @@ z-flip してる?
   compute shader
     textureSampleが使えないのでテクスチャの任意の点を取るのが面倒くさい
   arrays of texture are not supported in current wgsl
+  gaussian blur
+    one big kernel will be efficient rather than repeated blur
+    total_kernel_size = sqrt(num_loop) * kernel_size
+
 
 
 
