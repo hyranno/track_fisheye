@@ -81,4 +81,6 @@ class MultiScaleMatcher1d:
             )
 
     def draw(self) -> None:
-        self.device.queue.submit(self.create_command_buffers())
+        command_encoder = self.device.create_command_encoder()
+        self.push_passes_to(command_encoder)
+        self.device.queue.submit([command_encoder.finish()])

@@ -1,17 +1,14 @@
 import wgpu_util
 import texture_util
 import cv_util
-from quick_track_marker import QuickTrackMarker
 from marker_detector import MarkerDetector
 
 import asyncio
 import aioconsole
-import sys
 import time
 import cv2
-import wgpu
-from wgpu.gui.auto import run
 
+is_video_out_enabled = True
 cap = cv2.VideoCapture(0)
 width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -29,6 +26,21 @@ src_view = texture_util.create_buffer_texture(device, texture_size).create_view(
 preview_texture = texture_util.create_buffer_texture(device, texture_size)
 aqueue: asyncio.Queue[str] = asyncio.Queue()
 detector = MarkerDetector(device, src_view)
+
+fps = 10
+fourcc = cv2.VideoWriter_fourcc(*'MJPG')
+video_paths = [
+    'outputs/threshold.avi',
+    'outputs/matched.avi',
+    'outputs/markers.avi',
+]
+videos = [
+    cv2.VideoWriter(path, fourcc, fps, (int(width), int(height)))
+    for path in video_paths
+]
+for v in videos:
+    if not(v.isOpened()):
+        print('video not is_opened')
 
 print('wait 3 sec to initialize')
 time.sleep(3)
@@ -50,6 +62,16 @@ async def main_loop():
                 preview_texture, context.get_current_texture(), context_texture_format, device
             )
             context.present()
+            if is_video_out_enabled:
+                videos[0].write(cv2.cvtColor(
+                    cv_util.texture_to_cvimage(device, detector.preproced_view.texture, 4),
+                    cv2.COLOR_BGRA2BGR
+                ))
+                videos[1].write(cv2.cvtColor(
+                    cv_util.texture_to_cvimage(device, detector.matched_view.texture, 4),
+                    cv2.COLOR_BGRA2BGR
+                ))
+                videos[2].write(cv2.cvtColor(src, cv2.COLOR_BGRA2BGR))
         except Exception as err:
             print(err)
 

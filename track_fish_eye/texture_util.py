@@ -35,6 +35,7 @@ def create_buffer_texture(
         usage=wgpu.TextureUsage.COPY_DST
         | wgpu.TextureUsage.COPY_SRC
         | wgpu.TextureUsage.TEXTURE_BINDING
+        | wgpu.TextureUsage.STORAGE_BINDING
         | wgpu.TextureUsage.RENDER_ATTACHMENT,
         dimension=wgpu.TextureDimension.d2,
         format=format,

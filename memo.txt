@@ -38,21 +38,42 @@ TODO:
   似非コードの印刷と撮影
   リアルタイムでの実行
   //
+  ComputeShaderの方がいいのでは
   精度やバグ
-    fpsの計算
-    smooth_threshold, fisheye_detector の結果も表示したい
-      動画で出力するか
+    scale_min, scale_step を見直したほうがいいかも
+      multiscale_matcher1d を高速化してからの方がいいか
+    実行時間の測定
+      detector.detect()
     sqrtにinfやNanが入ってくる?
   x-mean のwgpu実行
     分割に最小距離条件も加えたい
-  z axis flipping
   orthogonalに近似せずperspectiveのまま計算
     orthogonalへの近似は、マーカーサイズがカメラとの距離に対して十分に小さい必要がある
   python - wgpu を ProtocolBuffer あたりでラップできないか?
 
+パターンの検出
+  multiscale_matcher1d に texture_3dを使う
+  畳み込みじゃないcvのQRコード方式も検討する
+
+ComputeShader
+  RenderShaderとはできるだけ混ぜたくない(オーバーヘッド的な)
+  textureSampleが使えない
+    textureLoad, textureGather, textureStore
+      loadPixel, loadPixelLinear, loadPixelNearest
+      clampを忘れずに
+
+リファクタリング
+  kernelのデフォルト値設定はmarker_detectorでやる
+  marker_pair_finderのkernelPNの生成もmarker_detectorへ移す
+
 実装メモ
   command_buffer
     一度使うと消費されてしまうので実行の度に作る必要がある
+  z axis flipping
+    positionに対してrotationのzが反転する
+    単眼カメラでは対処が厳しい
+      4点あればperspectiveから可能か?
+      マーカーが立体であれば可能か
   z座標について
     z座標を得るには焦点距離などが必要
     既知でない場合はカメラキャリブレーションが必要になってくる
@@ -93,7 +114,14 @@ Background
 パターンそれぞれの検出
   二値化
   縦横畳み込み
-    小さいサイズの畳み込み結果がfalseのとき、次に大きいサイズの畳み込みを行う * 縦横
+    畳み込み
+      並列度はピクセルごと
+      カーネルサイズごとに行い統合する必要がある
+        統合の時間オーダーはlog(カーネルサイズ)だがcompute shaderになるし線形でいいか
+      カーネルサイズごとに計算が必要なため総計算量は大きい
+    cvのQRコード検出で見られるエッジ間隔の比を使う方法も候補としてあるか
+      並列度は列ごとになる
+      オクルージョンやノイズに弱くなるか
   縦横の結果をandする
   k-mean clustering?
   //

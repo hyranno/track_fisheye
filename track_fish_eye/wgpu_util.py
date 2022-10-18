@@ -47,6 +47,19 @@ def push_2drender_pass(
     render_pass.end()
 
 
+def push_compute_pass(
+    encoder: wgpu.GPUCommandEncoder,
+    pipeline: wgpu.GPURenderPipeline,
+    bind: wgpu.GPUBindGroup,
+    size: tuple[int, int, int],
+):
+    compute_pass = encoder.begin_compute_pass()
+    compute_pass.set_pipeline(pipeline)
+    compute_pass.set_bind_group(0, bind, [], 0, 0)
+    compute_pass.dispatch_workgroups(size[0], size[1], size[2])  # x y z
+    compute_pass.end()
+
+
 class RenderShaderBinding:
     def __init__(
         self,

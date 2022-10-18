@@ -23,7 +23,8 @@ class MarkerDetector:
             device, src_view, self.preproced_view, self.preproced_view.texture.format
         )
         self.pattern_matcher = FisheyeDetector(
-            device, self.preproced_view, self.matched_view, self.matched_view.texture.format
+            device, self.preproced_view, self.matched_view, self.matched_view.texture.format,
+            0.05, 0.4, 1.1,
         )
         self.pair_finder = MarkerPairFinder(device, self.preproced_view, self.matched_view)
 

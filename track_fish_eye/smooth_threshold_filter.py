@@ -159,6 +159,7 @@ class SmoothThresholdFilter:
 
     def draw(self) -> None:
         command_encoder = self.device.create_command_encoder()
+        self.push_passes_to(command_encoder)
         self.device.queue.submit([command_encoder.finish()])
 
 
@@ -172,8 +173,10 @@ if __name__ == "__main__":
     context_texture_format = context.get_preferred_format(device.adapter)
     texture_src = cv_util.imread_texture(src_path, device)
     dest_view = texture_util.create_buffer_texture(device, texture_src.size).create_view()
-    filter = SmoothThresholdFilter(device, texture_src.create_view(), dest_view.texture.format)
+    filter = SmoothThresholdFilter(
+        device, texture_src.create_view(), dest_view, dest_view.texture.format
+    )
 
-    filter.draw(dest_view)
+    filter.draw()
     texture_util.draw_texture_on_texture(dest_view.texture, context_texture_view, context_texture_format, device)
     run()
