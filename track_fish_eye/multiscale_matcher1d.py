@@ -17,14 +17,13 @@ class MultiScaleMatcher1d:
         dest_format: wgpu.TextureFormat,
         kernel: numpy.ndarray,
         direction: numpy.ndarray,
-        scale_min: float,
-        scale_max: float,
+        scale_min: int,
+        scale_max: int,
         scale_step: float,
     ):
         self.device = device
         self.texture_size = src_view.texture.size
         linear_sampler = device.create_sampler(min_filter="linear", mag_filter="linear")
-        nearest_sampler = device.create_sampler(min_filter="nearest", mag_filter="nearest")
 
         self.ranges = []
         r = scale_min
@@ -44,7 +43,9 @@ class MultiScaleMatcher1d:
             for i in range(len(self.ranges))
         ]
         self.match1d_binds = [
-            self.match1d_shader.create_bind_group(src_view, linear_sampler, kernel, direction * r)
+            self.match1d_shader.create_bind_group(
+                src_view, linear_sampler, kernel, direction * r / self.texture_size[0:2]
+            )
             for r in self.ranges
         ]
 

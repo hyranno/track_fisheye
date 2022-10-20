@@ -39,22 +39,28 @@ TODO:
   リアルタイムでの実行
   ComputeShaderでの実装
   //
-  render版のinterfaceをcompute版と揃える
-  精度やバグ
-    scale_min, scale_step を見直したほうがいいか?
-    実行時間の測定
-    sqrtにinfやNanが入ってくる?
   fisheyeパターンの変更
     kernelの合計が0になるように(畳み込みで判定する都合上)
+  quaternionの計算が粗い
+  //////
   x-mean のwgpu実行
+    compute_shaderの他の部分が遅すぎて苦しいか
     分割に最小距離条件も加えたい
   orthogonalに近似せずperspectiveのまま計算
     orthogonalへの近似は、マーカーサイズがカメラとの距離に対して十分に小さい必要がある
   python - wgpu を ProtocolBuffer あたりでラップできないか?
+    wgslとpy両方でBindingLayoutを書くのだるい
+    自動でやってほしい
 
 パターンの検出
   multiscale_matcher1d に texture_3dを使う
   畳み込みじゃないcvのQRコード方式も検討する
+
+精度やバグ
+  scale_min, scale_step を見直したほうがいいか?
+  実行時間の測定
+  sqrtにinfやNanが入ってくる?
+  quaternionの計算が粗い?
 
 Render vs. Compute
   render_shaderだと0.2程度

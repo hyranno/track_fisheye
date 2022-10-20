@@ -13,13 +13,6 @@ from wgpu.gui.auto import run
 from pyclustering.cluster import xmeans
 
 
-def fisheye_kernel_ndarray() -> numpy.ndarray:
-    kernel = numpy.array([
-        1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0
-    ], dtype=numpy.dtype('<f'), order='C')
-    return kernel
-
-
 def kernel_pn(kernel_half: numpy.ndarray) -> numpy.ndarray:
     kernel = numpy.concatenate((kernel_half, -kernel_half), axis=None)
     return kernel
@@ -38,8 +31,8 @@ class MarkerPairFinder:
         device: wgpu.GPUDevice,
         preproced_view: wgpu.GPUTextureView,
         matched_view: wgpu.GPUTextureView,
+        kernel: numpy.ndarray,
         pairing_threshold: int = 80,
-        kernel: numpy.ndarray = None,
     ):
         self.device = device
         self.texture_size = matched_view.texture.size
@@ -47,8 +40,6 @@ class MarkerPairFinder:
         self.preproced_view = preproced_view
         self.matched_view = matched_view
         self.pairing_threshold = pairing_threshold
-        if kernel is None:
-            kernel = fisheye_kernel_ndarray()
         self.kernel_pn = kernel_pn(kernel)
 
         self.pairing_shader = shader.pattern_pairing.PatternPairingShader(

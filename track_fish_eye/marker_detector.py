@@ -8,25 +8,46 @@ from marker_pair_finder import MarkerPairFinder
 
 import sys
 import cv2
+import numpy
 import wgpu
 from wgpu.gui.auto import run
 
 
+def kernel_org() -> numpy.ndarray:
+    core = [1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0]
+    kernel = core + core[::-1]
+    return numpy.array(kernel, dtype=numpy.dtype('<f'), order='C')
+
+
+def fisheye_kernel_ndarray() -> numpy.ndarray:
+    kernel = numpy.array([
+        1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0
+    ], dtype=numpy.dtype('<f'), order='C')
+    return kernel
+
+
 class MarkerDetector:
-    def __init__(self, device: wgpu.GPUDevice, src_view: wgpu.GPUTextureView):
+    def __init__(
+        self,
+        device: wgpu.GPUDevice,
+        src_view: wgpu.GPUTextureView,
+        kernel: numpy.ndarray = None,
+    ):
         self.device = device
         texture_size = src_view.texture.size
         self.preproced_view = texture_util.create_buffer_texture(device, texture_size).create_view()
         self.matched_view = texture_util.create_buffer_texture(device, texture_size).create_view()
+        if kernel is None:
+            kernel = fisheye_kernel_ndarray()
 
         self.preprocess_filter = SmoothThresholdFilter(
             device, src_view, self.preproced_view, self.preproced_view.texture.format
         )
         self.pattern_matcher = FisheyeDetector(
             device, self.preproced_view, self.matched_view, self.matched_view.texture.format,
-            0.05, 0.4, 1.1,
+            20, 200, 1.1,
         )
-        self.pair_finder = MarkerPairFinder(device, self.preproced_view, self.matched_view)
+        self.pair_finder = MarkerPairFinder(device, self.preproced_view, self.matched_view, kernel)
 
     def detect(self) -> list[QuickTrackMarker]:
         command_encoder = self.device.create_command_encoder()
