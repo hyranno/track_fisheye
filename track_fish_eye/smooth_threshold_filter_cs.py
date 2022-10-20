@@ -2,9 +2,9 @@ import wgpu_util
 import texture_util
 import cv_util
 
-import compute_shader.grayscale
-import compute_shader.filter1d
-import compute_shader.smooth_threshold
+from compute_shader.grayscale import GrayscaleShader
+from compute_shader.filter1d import Filter1dShader
+from compute_shader.smooth_threshold import SmoothThresholdShader
 
 import sys
 import array
@@ -45,23 +45,17 @@ class SmoothThresholdFilter:
         self.dest_view = dest_view
         self.texture_size = src_view.texture.size
 
-        self.grayscale_view = texture_util.create_buffer_texture(
-            device, self.texture_size, wgpu.TextureFormat.rgba8snorm,
-        ).create_view()
-        self.grayscale_shader = compute_shader.grayscale.GrayscaleShader(device, src_view.texture.format)
+        self.grayscale_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
+        self.grayscale_shader = GrayscaleShader(device, src_view.texture.format)
         self.grayscale_pipeline = self.grayscale_shader.create_compute_pipeline()
         self.grayscale_bind = self.grayscale_shader.create_bind_group(
             src_view, self.grayscale_view
         )
 
         kernel_array = gaussian_kernel_ndarray(gaussian_kernel_size)
-        self.gaussian_view = texture_util.create_buffer_texture(
-            device, self.texture_size, wgpu.TextureFormat.rgba8snorm,
-        ).create_view()
-        self.gaussian_tmp_view = texture_util.create_buffer_texture(
-            device, self.texture_size, wgpu.TextureFormat.rgba8snorm,
-        ).create_view()
-        self.gaussian_shader = compute_shader.filter1d.Filter1dShader(
+        self.gaussian_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
+        self.gaussian_tmp_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
+        self.gaussian_shader = Filter1dShader(
             device,
             self.grayscale_view.texture.format,
         )
@@ -73,10 +67,8 @@ class SmoothThresholdFilter:
             self.gaussian_tmp_view, kernel_array, (0, 1), self.gaussian_view,
         )
 
-        self.smooth_threshold_view = texture_util.create_buffer_texture(
-            device, self.texture_size, wgpu.TextureFormat.rgba8snorm,
-        ).create_view()
-        self.smooth_threshold_shader = compute_shader.smooth_threshold.SmoothThresholdShader(
+        self.smooth_threshold_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
+        self.smooth_threshold_shader = SmoothThresholdShader(
             device,
             self.gaussian_view.texture.format
         )

@@ -1,7 +1,7 @@
 @group(0) @binding(0) var src: texture_2d<f32>; /* rgba8snorm */
 @group(0) @binding(1) var<storage, read> kernel: array<f32>;
 @group(0) @binding(2) var<uniform> direction: Vec2Container_i32;
-@group(0) @binding(3) var dest: texture_storage_2d<rgba8snorm, write>;
+@group(0) @binding(3) var dest: texture_storage_2d<rgba8unorm, write>;
 
 fn convolution_1d(start: vec2<i32>, num_sample: u32) -> vec4<f32> {
   var result = vec4<f32>(0.0);

@@ -39,12 +39,18 @@ TODO:
   リアルタイムでの実行
   //
   ComputeShaderの方がいいのでは
+    smooth_threshold_filter
+    fisheye_detector
+    marker_pair_finder
+    marker_detector
   精度やバグ
     scale_min, scale_step を見直したほうがいいかも
       multiscale_matcher1d を高速化してからの方がいいか
     実行時間の測定
       detector.detect()
     sqrtにinfやNanが入ってくる?
+  fisheyeパターンの変更
+    kernelの合計が0になるように(畳み込みで判定する都合上)
   x-mean のwgpu実行
     分割に最小距離条件も加えたい
   orthogonalに近似せずperspectiveのまま計算
@@ -83,6 +89,8 @@ ComputeShader
   wgpu.FilterMode.nearest が効いてない
   compute shader
     textureSampleが使えないのでテクスチャの任意の点を取るのが面倒くさい
+  render shader
+    render target は2dのみ
   arrays of texture are not supported in current wgsl
   gaussian blur
     one big kernel will be efficient rather than repeated blur
