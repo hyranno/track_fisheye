@@ -41,7 +41,6 @@ class SmoothThresholdFilter:
         edge: float = 0.1,
     ):
         self.device = device
-        self.dest_view = dest_view
         self.texture_size = src_view.texture.size
 
         self.grayscale_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
@@ -66,7 +65,7 @@ class SmoothThresholdFilter:
             self.gaussian_tmp_view, kernel_array, (0, 1), self.gaussian_view,
         )
 
-        self.smooth_threshold_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
+        # self.smooth_threshold_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
         self.smooth_threshold_shader = SmoothThresholdShader(
             device,
             self.gaussian_view.texture.format
@@ -76,7 +75,7 @@ class SmoothThresholdFilter:
             self.grayscale_view,
             self.gaussian_view,
             (-edge, edge),
-            self.smooth_threshold_view,
+            dest_view,
         )
 
         return
@@ -121,7 +120,7 @@ if __name__ == "__main__":
 
     filter.compute()
     texture_util.draw_texture_on_texture(
-        filter.smooth_threshold_view.texture, context_texture_view, context_texture_format, device
+        dest_view.texture, context_texture_view, context_texture_format, device
     )
 
     run()

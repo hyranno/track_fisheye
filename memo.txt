@@ -37,17 +37,12 @@ TODO:
     計算結果の表示
   似非コードの印刷と撮影
   リアルタイムでの実行
+  ComputeShaderでの実装
   //
-  ComputeShaderの方がいいのでは
-    smooth_threshold_filter
-    fisheye_detector
-    marker_pair_finder
-    marker_detector
+  render版のinterfaceをcompute版と揃える
   精度やバグ
-    scale_min, scale_step を見直したほうがいいかも
-      multiscale_matcher1d を高速化してからの方がいいか
+    scale_min, scale_step を見直したほうがいいか?
     実行時間の測定
-      detector.detect()
     sqrtにinfやNanが入ってくる?
   fisheyeパターンの変更
     kernelの合計が0になるように(畳み込みで判定する都合上)
@@ -61,16 +56,12 @@ TODO:
   multiscale_matcher1d に texture_3dを使う
   畳み込みじゃないcvのQRコード方式も検討する
 
-ComputeShader
-  RenderShaderとはできるだけ混ぜたくない(オーバーヘッド的な)
-  textureSampleが使えない
-    textureLoad, textureGather, textureStore
-      loadPixel, loadPixelLinear, loadPixelNearest
-      clampを忘れずに
+Render vs. Compute
+  render_shaderだと0.2程度
+  compute_shaderだと1.3程度かかる
+  どういう理由での差?
+  RenderBundleにしたらもっと短くなる?
 
-リファクタリング
-  kernelのデフォルト値設定はmarker_detectorでやる
-  marker_pair_finderのkernelPNの生成もmarker_detectorへ移す
 
 実装メモ
   command_buffer

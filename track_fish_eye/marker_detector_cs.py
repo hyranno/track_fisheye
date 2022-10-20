@@ -62,5 +62,9 @@ if __name__ == "__main__":
     for m in markers:
         cv_util.draw_tracked_marker(src, m)
     texture_preview_marker = cv_util.cvimage_to_texture(src, device)
-    texture_util.draw_texture_on_texture(texture_preview_marker, context_texture_view, context_texture_format, device)
+    texture_util.draw_texture_on_texture(
+        # detector.preproced_view.texture, context_texture_view, context_texture_format, device
+        # detector.matched_view.texture, context_texture_view, context_texture_format, device
+        texture_preview_marker, context_texture_view, context_texture_format, device
+    )
     run()

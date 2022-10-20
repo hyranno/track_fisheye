@@ -8,7 +8,10 @@ import aioconsole
 import time
 import cv2
 
-is_video_out_enabled = True
+is_detection_time_print_enabled = False
+is_video_out_enabled = False
+is_canvas_out_enabled = True
+
 cap = cv2.VideoCapture(0)
 width = cap.get(cv2.CAP_PROP_FRAME_WIDTH)
 height = cap.get(cv2.CAP_PROP_FRAME_HEIGHT)
@@ -53,15 +56,19 @@ async def main_loop():
         cv_util.cvimage_to_texture(src, device, src_view.texture)
 
         try:
+            t = time.time()
             markers = detector.detect()
+            if is_detection_time_print_enabled:
+                print(time.time() - t)
             for m in markers:
                 cv_util.draw_tracked_marker(src, m)
                 # cv_util.draw_wireframe_cube(src, m.size, m.points2d[0], m.quat)
-            cv_util.cvimage_to_texture(src, device, preview_texture)
-            texture_util.draw_texture_on_texture(
-                preview_texture, context.get_current_texture(), context_texture_format, device
-            )
-            context.present()
+            if is_canvas_out_enabled:
+                cv_util.cvimage_to_texture(src, device, preview_texture)
+                texture_util.draw_texture_on_texture(
+                    preview_texture, context.get_current_texture(), context_texture_format, device
+                )
+                context.present()
             if is_video_out_enabled:
                 videos[0].write(cv2.cvtColor(
                     cv_util.texture_to_cvimage(device, detector.preproced_view.texture, 4),
