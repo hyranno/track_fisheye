@@ -37,7 +37,6 @@ class SmoothThresholdFilter:
         device: wgpu.GPUDevice,
         src_view: wgpu.GPUTextureView,
         dest_view: wgpu.GPUTextureView,
-        dest_format: wgpu.TextureFormat,
         gaussian_kernel_size: int = 61,
         edge: float = 0.1,
     ):
@@ -84,20 +83,20 @@ class SmoothThresholdFilter:
 
     def push_compute_passes_to(self, encoder: wgpu.GPUCommandEncoder):
         wgpu_util.push_compute_pass(
-            encoder, filter.grayscale_pipeline, filter.grayscale_bind,
-            (filter.texture_size[0], filter.texture_size[1], 1)
+            encoder, self.grayscale_pipeline, self.grayscale_bind,
+            (self.texture_size[0], self.texture_size[1], 1)
         )
         wgpu_util.push_compute_pass(
-            encoder, filter.gaussian_pipeline, filter.gaussian_bind_horizontal,
-            (filter.texture_size[0], filter.texture_size[1], 1)
+            encoder, self.gaussian_pipeline, self.gaussian_bind_horizontal,
+            (self.texture_size[0], self.texture_size[1], 1)
         )
         wgpu_util.push_compute_pass(
-            encoder, filter.gaussian_pipeline, filter.gaussian_bind_vertical,
-            (filter.texture_size[0], filter.texture_size[1], 1)
+            encoder, self.gaussian_pipeline, self.gaussian_bind_vertical,
+            (self.texture_size[0], self.texture_size[1], 1)
         )
         wgpu_util.push_compute_pass(
-            encoder, filter.smooth_threshold_pipeline, filter.smooth_threshold_bind,
-            (filter.texture_size[0], filter.texture_size[1], 1)
+            encoder, self.smooth_threshold_pipeline, self.smooth_threshold_bind,
+            (self.texture_size[0], self.texture_size[1], 1)
         )
 
     def compute(self) -> None:
@@ -117,7 +116,7 @@ if __name__ == "__main__":
     texture_src = cv_util.imread_texture(src_path, device)
     dest_view = texture_util.create_buffer_texture(device, texture_src.size).create_view()
     filter = SmoothThresholdFilter(
-        device, texture_src.create_view(), dest_view, dest_view.texture.format
+        device, texture_src.create_view(), dest_view
     )
 
     filter.compute()
