@@ -158,12 +158,15 @@ def draw_tracked_marker(
     cv2.circle(dest, list(map(int, marker.points2d[1][0])), 3, green, thickness)
     cv2.circle(dest, list(map(int, marker.points2d[1][1])), 3, green, thickness)
     pos3d = numpy.array([marker.points2d[0][0], marker.points2d[0][1], 0])
-    axes = quaternion.rotate_vectors(marker.quat, [
-        [1, 0, 0],
-        [0, 1, 0],
-        [0, 0, -1],
-    ])
-    points = [(numpy.array(v) * marker.size + pos3d)[0:2].astype(int) for v in axes]
+    c = marker.size
+    plane_axes = [
+        [c, 0, 0],
+        [0, c, 0],
+        [0, 0, -c],
+    ]
+    # axes = quaternion.rotate_vectors(marker.quat, plane_axes)
+    axes = [numpy.dot(marker.dcm, v) for v in plane_axes]
+    points = [(numpy.array(v) + pos3d)[0:2].astype(int) for v in axes]
     cv2.line(dest, position, points[0], red, thickness)
     cv2.line(dest, position, points[1], green, thickness)
     cv2.line(dest, position, points[2], blue, thickness)

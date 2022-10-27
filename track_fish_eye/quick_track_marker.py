@@ -30,6 +30,7 @@ class QuickTrackMarker:
             [v0[1], v1[1], v2[1]],
             [v0[2], v1[2], v2[2]],
         ])
+        self.dcm = dcm  # for precision
         self.quat = quaternion.from_rotation_matrix(dcm)
 
     def __repr__(self) -> str:

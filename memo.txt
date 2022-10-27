@@ -39,18 +39,28 @@ TODO:
   リアルタイムでの実行
   ComputeShaderでの実装
   //
-  fisheyeパターンの変更
-    kernelの合計が0になるように(畳み込みで判定する都合上)
-  quaternionの計算が粗い
+  marker再考
+    memo_marker
+      fisheyeパターンの変更
+        kernelの合計が0になるように(畳み込みで判定する都合上)
+      quaternionの計算が粗いのでdcmのまま使う
+    id情報の付加
+      id付きマーカーの画像出力
+      //
+      実写画像からのid読み取り
+        アフィン変換
+        リサンプル
   //////
-  x-mean のwgpu実行
+  points_positionからのマルチスレッド?
+  orthogonalに近似せずperspectiveのまま計算?
+    orthogonalへの近似は、マーカーサイズがカメラとの距離に対して十分に小さい必要がある
+  x-mean のwgpu実行?
     compute_shaderの他の部分が遅すぎて苦しいか
     分割に最小距離条件も加えたい
-  orthogonalに近似せずperspectiveのまま計算
-    orthogonalへの近似は、マーカーサイズがカメラとの距離に対して十分に小さい必要がある
   python - wgpu を ProtocolBuffer あたりでラップできないか?
     wgslとpy両方でBindingLayoutを書くのだるい
     自動でやってほしい
+      RustのSierraとかがやってるっぽい
 
 パターンの検出
   multiscale_matcher1d に texture_3dを使う
@@ -61,6 +71,7 @@ TODO:
   実行時間の測定
   sqrtにinfやNanが入ってくる?
   quaternionの計算が粗い?
+    dcmをそのまま使ったほうが良さそう
 
 Render vs. Compute
   render_shaderだと0.2程度
