@@ -48,10 +48,14 @@ TODO:
       id付きマーカーの画像出力
       //
       実写画像からのid読み取り
-        アフィン変換
-        リサンプル
+        アフィン変換 + 縮小(リサンプル)
+          img_to_marker... Affineはpython側で計算しておく
+        MarkerIdReader
+          read(src, point_pos, point_axis0, point_axis1) -> int
   //////
-  points_positionからのマルチスレッド?
+  marker候補ごとのマルチスレッド?
+    marker_pair_finderのcalc_pairing_valueの後からスレッドごとになる
+      eval_pairing と read_marker に分けるか
   orthogonalに近似せずperspectiveのまま計算?
     orthogonalへの近似は、マーカーサイズがカメラとの距離に対して十分に小さい必要がある
   x-mean のwgpu実行?
@@ -61,6 +65,11 @@ TODO:
     wgslとpy両方でBindingLayoutを書くのだるい
     自動でやってほしい
       RustのSierraとかがやってるっぽい
+
+リファクタリング
+  if -> step
+  buffer類はbind_groupではなくlayoutと同時に作ってもよさそう
+    データ書き込みの手間と比較したい
 
 パターンの検出
   multiscale_matcher1d に texture_3dを使う
@@ -116,6 +125,8 @@ Background
   新しく高速なものを提案する
     QRコードに代表されるfish_eyeを利用する
     wgpuで並列化する
+    状態を持たない
+      混線したり見失ったトラッカーを再度初期化する必要がない
 
 
 歪み補正

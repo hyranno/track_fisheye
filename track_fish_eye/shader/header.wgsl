@@ -5,6 +5,9 @@ struct VertexOutput {
     @builtin(position) position: vec4<f32>,
     @location(0) uv: vec2<f32>,
 };
+struct Mat3x3Container_f32 {
+  val: mat3x3<f32>,
+};
 struct Vec4Container_f32 {
   val: vec4<f32>,
 };

@@ -1,0 +1,37 @@
+
+/* point = Translate * Rotate * Skew * Scale * axis */
+/*
+Sc : matrix([Scx, 0, 0], [0, Scy, 0], [0, 0, 1])$
+Sk : matrix([1, tan(Ska), 0], [0, 1, 0], [0, 0, 1])$
+Ro : matrix([cos(Ra), -sin(Ra), 0], [sin(Ra), cos(Ra), 0], [0, 0, 1])$
+Tr : matrix([1, 0, Tx], [0, 1, Ty], [0, 0, 1])$  /* given by points_position */
+declare(Sc, real, Sk, real, Ra, real, Tr, real)$
+Af : Ro.Sk.Sc;
+invert(Af);
+*/
+
+Af : matrix([a00, a01, 0], [a10, a11, 0], [0, 0, 1])$
+declare(Af, real)$
+
+ax : matrix([1], [0], [1])$
+ay : matrix([0], [1], [1])$
+
+rx : matrix([x0], [y0], [1])$
+ry : matrix([x1], [y1], [1])$
+declare(rx, real, ry, real)$
+
+eqns : [
+  (Af.ax)[1][1] = rx[1][1],
+  (Af.ax)[2][1] = rx[2][1],
+  (Af.ay)[1][1] = ry[1][1],
+  (Af.ay)[2][1] = ry[2][1]
+]$
+
+solve(eqns, [a00, a01, a10, a11]);
+
+Ap : matrix([1, 0, px], [0, 1, py], [0, 0, 1])$
+Am : matrix([1, 0, -0.5], [0, 1, -0.5], [0, 0, 1]) . matrix([2, 0, 0], [0, 2, 0], [0, 0, 1]);
+A : Ap.Af.Am;
+pi_px : A.pm_uv;
+/*
+*/
