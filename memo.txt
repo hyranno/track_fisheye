@@ -48,16 +48,26 @@ TODO:
       id付きマーカーの画像出力
       //
       実写画像からのid読み取り
-        アフィン変換 + 縮小(リサンプル)
-          img_to_marker... Affineはpython側で計算しておく
+        新マーカーの印刷と撮影
         MarkerIdReader
+          アフィン変換 + 縮小(リサンプル)
           read(src, point_pos, point_axis0, point_axis1) -> int
+      id_template3への移行
+        align_patternを[1, -1, -1, 1]にする
+          positionのfisheyeとかぶらない、畳み込みで0になる系列
+        img_to_marker
+          リサンプルするのはマーカー右下のID領域のみでよい
+          グレイスケール、アフィン変換、ガウシアンフィルタ、縮小、2値化 でがっつりやるか？
+          4*4の領域にリサンプル
   //////
+  MarkerDetector, MarkerFormat, MarkerIdReader, QuickTrackMarker の関係整理
+    QuickTrackMarkerはOption<Id>を持つ?
   marker候補ごとのマルチスレッド?
     marker_pair_finderのcalc_pairing_valueの後からスレッドごとになる
       eval_pairing と read_marker に分けるか
   orthogonalに近似せずperspectiveのまま計算?
     orthogonalへの近似は、マーカーサイズがカメラとの距離に対して十分に小さい必要がある
+    align_patternをマッチして4点にしたらAruco同様の処理でいけそう
   x-mean のwgpu実行?
     compute_shaderの他の部分が遅すぎて苦しいか
     分割に最小距離条件も加えたい

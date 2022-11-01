@@ -6,11 +6,11 @@ import wgpu
 from wgpu.gui.auto import run
 import ctypes
 
-import mymodule
+# import mymodule
 import wgpu_util
 import texture_util
 import cv_util
-from marker_detector import MarkerDetector
+from marker_detector import MarkerDetector, DetectorParams, MarkerFormat
 
 
 class ImgToMarkerShader(wgpu_util.RenderShaderBinding):
@@ -146,7 +146,7 @@ if __name__ == "__main__":
 
     src = cv2.imread(path, -1)
     src_view = cv_util.cvimage_to_texture(src, device).create_view()
-    detector = MarkerDetector(device, src_view)
+    detector = MarkerDetector(device, src_view, MarkerFormat(), DetectorParams(20, 200, 1.08, 0.6))
 
     markers = detector.detect()
 

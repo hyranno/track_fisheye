@@ -23,3 +23,7 @@ def create_fisheye(half_kernel: list[int]) -> numpy.ndarray:
         for x in range(length):
             pattern[y][x] = half_kernel[min(fold_even(y, half_length), fold_even(x, half_length))]
     return pattern
+
+
+def qr_fisheye_kernel() -> list[int]:
+    return [1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0]

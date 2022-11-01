@@ -167,6 +167,7 @@ if __name__ == "__main__":
     args = sys.argv
     # init image path from args or default
     src_path = "resources/image.png"
+    dest_path = "resources/image_preproced.png"
     print("processing " + src_path)
     device, context = wgpu_util.create_sized_canvas((512, 512), "image io example")
     context_texture_view = context.get_current_texture()
@@ -178,5 +179,6 @@ if __name__ == "__main__":
     )
 
     filter.draw()
+    cv_util.imwrite_texture(dest_view.texture, 4, dest_path, device)
     texture_util.draw_texture_on_texture(dest_view.texture, context_texture_view, context_texture_format, device)
     run()

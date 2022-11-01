@@ -11,16 +11,18 @@ import wgpu
 from wgpu.gui.auto import run
 
 
-def fisheye_kernel_ndarray() -> numpy.ndarray:
-    kernel = numpy.array([
-        1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0
-    ], dtype=numpy.dtype('<f'), order='C')
-    return kernel
-
-
-def fisheye_PN_kernel_ndarray(kernel_half: numpy.ndarray) -> numpy.ndarray:
-    kernel = numpy.concatenate((kernel_half, -kernel_half), axis=None)
-    return kernel
+class DetectorParams:  # named tuple
+    def __init__(
+        self,
+        scale_min: int = 20,
+        scale_max: int = 200,
+        scale_step: float = 1.1,
+        match_threshold: float = 0.6,
+    ):
+        self.scale_min = scale_min
+        self.scale_max = scale_max
+        self.scale_step = scale_step
+        self.match_threshold = match_threshold
 
 
 class FisheyeDetector:
@@ -30,18 +32,15 @@ class FisheyeDetector:
         src_view: wgpu.GPUTextureView,
         dest_view: wgpu.GPUTextureView,
         dest_format: wgpu.TextureFormat,
-        scale_min: int = 20,
-        scale_max: int = 200,
-        scale_step: float = 1.1,
-        match_threshold: float = 0.6,
-        kernel: numpy.ndarray = None,
+        kernel: numpy.ndarray,
+        params: DetectorParams = None,
     ):
         self.device = device
         self.dest_view = dest_view
         self.texture_size = src_view.texture.size
         nearest_sampler = device.create_sampler(min_filter="nearest", mag_filter="nearest")
-        if kernel is None:
-            kernel = fisheye_kernel_ndarray()
+        if params is None:
+            params = DetectorParams()
 
         self.match1d_view_vertical = texture_util.create_buffer_texture(
             device, self.texture_size, wgpu.TextureFormat.rgba8snorm,
@@ -56,9 +55,9 @@ class FisheyeDetector:
             self.match1d_view_vertical.texture.format,
             kernel,
             numpy.array([0.0, 1.0]),
-            scale_min,
-            scale_max,
-            scale_step,
+            params.scale_min,
+            params.scale_max,
+            params.scale_step,
         )
         self.match1d_horizontal = MultiScaleMatcher1d(
             device,
@@ -67,9 +66,9 @@ class FisheyeDetector:
             self.match1d_view_horizontal.texture.format,
             kernel,
             numpy.array([1.0, 0.0]),
-            scale_min,
-            scale_max,
-            scale_step,
+            params.scale_min,
+            params.scale_max,
+            params.scale_step,
         )
 
         self.match_result_shader = MatchResultIntegrateShader(
@@ -85,7 +84,7 @@ class FisheyeDetector:
             self.match1d_view_vertical,
             self.match1d_view_horizontal,
             nearest_sampler,
-            match_threshold,
+            params.match_threshold,
         )
 
         return
@@ -114,7 +113,16 @@ if __name__ == "__main__":
     context_texture_format = context.get_preferred_format(device.adapter)
     texture_src = cv_util.imread_texture(src_path, device)
     dest_view = texture_util.create_buffer_texture(device, texture_src.size).create_view()
-    filter = FisheyeDetector(device, texture_src.create_view(), dest_view, dest_view.texture.format)
+
+    def kernel_org() -> numpy.ndarray:
+        core = [1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0]
+        kernel = core + core[::-1]
+        return numpy.array(kernel, dtype=numpy.dtype('<f'), order='C')
+    filter = FisheyeDetector(
+        device, texture_src.create_view(), dest_view, dest_view.texture.format,
+        kernel_org(),
+        DetectorParams(20, 200, 1.08, 0.6),
+    )
 
     filter.draw()
     cv_util.imwrite_texture(dest_view.texture, 4, dest_path, device)

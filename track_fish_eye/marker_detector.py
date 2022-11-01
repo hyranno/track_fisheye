@@ -2,8 +2,9 @@ import wgpu_util
 import texture_util
 import cv_util
 from quick_track_marker import QuickTrackMarker
+from marker_format import MarkerFormat
 from smooth_threshold_filter import SmoothThresholdFilter
-from fisheye_detector import FisheyeDetector
+from fisheye_detector import FisheyeDetector, DetectorParams
 from marker_pair_finder import MarkerPairFinder
 
 import sys
@@ -13,41 +14,30 @@ import wgpu
 from wgpu.gui.auto import run
 
 
-def kernel_org() -> numpy.ndarray:
-    core = [1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0]
-    kernel = core + core[::-1]
-    return numpy.array(kernel, dtype=numpy.dtype('<f'), order='C')
-
-
-def fisheye_kernel_ndarray() -> numpy.ndarray:
-    kernel = numpy.array([
-        1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0
-    ], dtype=numpy.dtype('<f'), order='C')
-    return kernel
-
-
 class MarkerDetector:
     def __init__(
         self,
         device: wgpu.GPUDevice,
         src_view: wgpu.GPUTextureView,
-        kernel: numpy.ndarray = None,
+        marker_format: MarkerFormat,
+        detector_params: DetectorParams = None,
+        pairing_threshold: int = 80,
     ):
         self.device = device
         texture_size = src_view.texture.size
         self.preproced_view = texture_util.create_buffer_texture(device, texture_size).create_view()
         self.matched_view = texture_util.create_buffer_texture(device, texture_size).create_view()
-        if kernel is None:
-            kernel = fisheye_kernel_ndarray()
 
         self.preprocess_filter = SmoothThresholdFilter(
             device, src_view, self.preproced_view, self.preproced_view.texture.format
         )
         self.pattern_matcher = FisheyeDetector(
             device, self.preproced_view, self.matched_view, self.matched_view.texture.format,
-            20, 200, 1.1,
+            marker_format.get_fisheye_kernel(), detector_params,
         )
-        self.pair_finder = MarkerPairFinder(device, self.preproced_view, self.matched_view, kernel)
+        self.pair_finder = MarkerPairFinder(
+            device, self.preproced_view, self.matched_view, marker_format.get_pairing_kernel()
+        )
 
     def detect(self) -> list[QuickTrackMarker]:
         command_encoder = self.device.create_command_encoder()
@@ -69,7 +59,7 @@ if __name__ == "__main__":
 
     src = cv2.imread(path, -1)
     src_view = cv_util.cvimage_to_texture(src, device).create_view()
-    detector = MarkerDetector(device, src_view)
+    detector = MarkerDetector(device, src_view, MarkerFormat(), DetectorParams(20, 200, 1.08, 0.6))
 
     markers = detector.detect()
     for m in markers:

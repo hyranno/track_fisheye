@@ -21,6 +21,5 @@ class BlockEncoder:
         return word
 
     def decode(self, received: numpy.ndarray) -> int:
-        word = self.bpdec.decode(received)
-        val = self.decode_dict[tuple(word)]
-        return val
+        word = tuple(self.bpdec.decode(received))
+        return self.decode_dict[word] if (word in self.decode_dict.keys()) else -1

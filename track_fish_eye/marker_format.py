@@ -23,11 +23,15 @@ class MarkerIdEncoder:
         return self.encoder.encode(id).reshape([8, 8])
 
     def decode(self, code: numpy.ndarray) -> int:
+        print(code)
         return self.encoder.decode(code.flatten())
 
 
 class MarkerFormat:
-    def __init__(self, half_kernel: list[int]):
+    def __init__(
+        self,
+        half_kernel: list[int] = [1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0]
+    ):
         quater_length = len(half_kernel)
         half_length = 2 * quater_length
         length = 4 * quater_length
@@ -45,7 +49,7 @@ class MarkerFormat:
         marker[half_length:half_length+quater_length-1, half_length+quater_length+1:length] = 1
         marker[half_length+quater_length+1:length, half_length:half_length+quater_length-1] = 1
         marker[half_length+quater_length+1:length, half_length+quater_length+1:length] = 1
-        align_pattern = util.create_fisheye([-1, 1, -1])
+        align_pattern = util.create_fisheye([-1, -1, 1])
         align_offset = half_length + quater_length - 3
         marker[align_offset:align_offset+6, align_offset:align_offset+6] = align_pattern
 
@@ -60,6 +64,7 @@ class MarkerFormat:
 
         self.half_kernel = half_kernel
         self.marker_template = marker
+        self.length = length
         self.id_length = id_length
         self.id_offsets = id_offsets
         self.id_encoder = MarkerIdEncoder()
@@ -86,3 +91,12 @@ class MarkerFormat:
         code[lh:li, 0:lh] = marker[p[1]:p[1]+lh, p[0]:p[0]+lh]
         code[lh:li, lh:li] = marker[p[1]:p[1]+lh, p[1]:p[1]+lh]
         return self.id_encoder.decode(code)
+
+    def get_fisheye_kernel(self) -> numpy.ndarray:
+        kernel = self.half_kernel + self.half_kernel[::-1]
+        return numpy.array(kernel, dtype=numpy.dtype('<f'), order='C')
+
+    def get_pairing_kernel(self) -> numpy.ndarray:
+        posi = self.half_kernel + self.half_kernel[::-1]
+        nega = [-v for v in posi]
+        return numpy.array(posi + nega, dtype=numpy.dtype('<f'), order='C')

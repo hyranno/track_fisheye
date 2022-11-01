@@ -13,11 +13,6 @@ from wgpu.gui.auto import run
 from pyclustering.cluster import xmeans
 
 
-def kernel_pn(kernel_half: numpy.ndarray) -> numpy.ndarray:
-    kernel = numpy.concatenate((kernel_half, -kernel_half), axis=None)
-    return kernel
-
-
 def xmcluster(points) -> xmeans.xmeans:
     initial_center = xmeans.kmeans_plusplus_initializer(points, 1).initialize()
     xm = xmeans.xmeans(points, initial_center, ccore=True)
@@ -40,7 +35,7 @@ class MarkerPairFinder:
         self.preproced_view = preproced_view
         self.matched_view = matched_view
         self.pairing_threshold = pairing_threshold
-        self.kernel_pn = kernel_pn(kernel)
+        self.kernel_pn = kernel
 
         self.pairing_shader = shader.pattern_pairing.PatternPairingShader(
             device, preproced_view.texture.format
@@ -127,12 +122,15 @@ if __name__ == "__main__":
     preproced_view = cv_util.imread_texture(preproced_path, device).create_view()
     matched_view = cv_util.imread_texture(matched_path, device).create_view()
 
-    pair_finder = MarkerPairFinder(device, preproced_view, matched_view)
+    half_kernel = [1.0, -1.0, -1.0, 1.0, 1.0, -1.0, 1.0, -1.0]
+    kernel = numpy.array(half_kernel + half_kernel[::-1], dtype=numpy.dtype('<f'), order='C')
+    kernel_pn = numpy.concatenate((kernel, -kernel), axis=None)
+    pair_finder = MarkerPairFinder(device, preproced_view, matched_view, kernel_pn)
     markers = pair_finder.find()
 
     img_preview_marker = cv2.imread(original_path, -1)
     for m in markers:
-        cv_util.draw_wireframe_cube(img_preview_marker, m.size, m.points2d[0], m.quat)
+        cv_util.draw_tracked_marker(img_preview_marker, m)
     texture_preview_marker = cv_util.cvimage_to_texture(img_preview_marker, device)
     texture_util.draw_texture_on_texture(texture_preview_marker, context_texture_view, context_texture_format, device)
     run()
