@@ -14,6 +14,9 @@ struct Vec4Container_f32 {
 struct Vec2Container_u32 {
   val: vec2<u32>,
 };
+struct Vec2Container_i32 {
+  val: vec2<i32>,
+};
 struct Vec2Container_f32 {
   val: vec2<f32>,
 };

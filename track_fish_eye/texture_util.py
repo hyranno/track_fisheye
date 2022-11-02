@@ -79,10 +79,7 @@ def draw_texture_on_texture(
             "blend": blend_state,
         },
     ])
-    shader_bind = tex_shader.create_bind_group([
-        {"binding": 0, "resource": sampler},
-        {"binding": 1, "resource": src.create_view(format=src.format)},
-    ])
+    shader_bind = tex_shader.create_bind_group(src.create_view(), sampler)
     command_encoder = device.create_command_encoder()
     render_pass = command_encoder.begin_render_pass(
         color_attachments=[

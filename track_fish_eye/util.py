@@ -1,4 +1,5 @@
 import numpy
+import math
 
 
 def int_to_bits(num: int, numbits: int) -> list[int]:
@@ -27,3 +28,12 @@ def create_fisheye(half_kernel: list[int]) -> numpy.ndarray:
 
 def qr_fisheye_kernel() -> list[int]:
     return [1.0, -1.0, 1.0, -1.0, -1.0, -1.0, 1.0, -1.0, 1.0]
+
+
+def gaussian_kernel(size: int) -> list[float]:
+    sigma: float = size / (2 * 3)
+    half_size = (size - 1) / 2
+    weights = [(math.exp(-(i - half_size) ** 2 / (2*sigma*sigma))) for i in range(size)]
+    denominator = sum(weights)  # calc sum, not analytic integration, for approx error
+    kernel = [v / denominator for v in weights]
+    return kernel

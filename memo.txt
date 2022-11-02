@@ -50,15 +50,14 @@ TODO:
       実写画像からのid読み取り
         新マーカーの印刷と撮影
         MarkerIdReader
-          アフィン変換 + 縮小(リサンプル)
           read(src, point_pos, point_axis0, point_axis1) -> int
       id_template3への移行
+        img_to_marker -> marker_id_clipper
+          リサンプルするのはマーカー右下のID領域のみでよい
+          グレイスケール、アフィン変換、ガウシアンフィルタ、縮小、2値化 でやる
+        MarkerFormat
         align_patternを[1, -1, -1, 1]にする
           positionのfisheyeとかぶらない、畳み込みで0になる系列
-        img_to_marker
-          リサンプルするのはマーカー右下のID領域のみでよい
-          グレイスケール、アフィン変換、ガウシアンフィルタ、縮小、2値化 でがっつりやるか？
-          4*4の領域にリサンプル
   //////
   MarkerDetector, MarkerFormat, MarkerIdReader, QuickTrackMarker の関係整理
     QuickTrackMarkerはOption<Id>を持つ?

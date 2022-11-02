@@ -1,10 +1,12 @@
 import wgpu_util
 import texture_util
 import cv_util
+import util
 
 import shader.grayscale
-import shader.filter_1d
+from shader.filter1d import Filter1dShader
 import shader.smooth_threshold
+
 
 import sys
 import array
@@ -15,51 +17,7 @@ from wgpu.gui.auto import run
 
 
 def gaussian_kernel_ndarray(size: int) -> numpy.ndarray:
-    kernel_data: array.array[float] = array.array('f')
-    sigma: float = size / (2 * 3)
-    for index in range(size):
-        x = index - (size - 1) / 2
-        kernel_data.append(math.exp(-x*x / (2*sigma*sigma)))
-    denominator = sum(kernel_data)  # calc sum, not analytic integration, for approx error
-    for index in range(size):
-        kernel_data[index] /= denominator
-    kernel = numpy.ndarray(
-        shape=(1, size),
-        dtype=numpy.float32,
-        buffer=numpy.array(kernel_data)
-    )
-    return kernel
-
-
-def kernel1d_texture(device: wgpu.GPUDevice, kernel: numpy.ndarray) -> wgpu.GPUTexture:
-    size = kernel.shape[1]
-    texture_data = kernel.data
-    texture_size: tuple[int, int, int] = size, 1, 1
-    texture = device.create_texture(
-        size=texture_size,
-        usage=wgpu.TextureUsage.COPY_DST | wgpu.TextureUsage.COPY_SRC | wgpu.TextureUsage.TEXTURE_BINDING,
-        dimension=wgpu.TextureDimension.d1,
-        format=wgpu.TextureFormat.r32float,
-        mip_level_count=1,
-        sample_count=1,
-    )
-    texture_data_layout = {
-        "offset": 0,
-        "bytes_per_row": 4 * size,  # texture_data.strides[0],
-        "rows_per_image": 0,
-    }
-    texture_target = {
-        "texture": texture,
-        "mip_level": 0,
-        "origin": (0, 0, 0),
-    }
-    device.queue.write_texture(
-        texture_target,
-        texture_data,
-        texture_data_layout,
-        texture_size,
-    )
-    return texture
+    return numpy.array(util.gaussian_kernel(size), dtype=numpy.float32)
 
 
 class SmoothThresholdFilter:
@@ -92,13 +50,10 @@ class SmoothThresholdFilter:
 
         self.gaussian_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
         self.gaussian_tmp_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()
-        kernel_array = gaussian_kernel_ndarray(gaussian_kernel_size)
-        self.gaussian_kernel_view = kernel1d_texture(device, kernel_array).create_view()
-        self.gaussian_shader = shader.filter_1d.Filter1dShader(
+        gaussian_kernel = numpy.array(util.gaussian_kernel(gaussian_kernel_size), dtype=numpy.float32)
+        self.gaussian_shader = Filter1dShader(
             device,
             self.grayscale_view.texture.format,
-            self.gaussian_kernel_view.texture.format,
-            wgpu.SamplerBindingType.filtering
         )
         self.gaussian_pipeline = self.gaussian_shader.create_render_pipeline([
             {
@@ -109,18 +64,14 @@ class SmoothThresholdFilter:
         self.gaussian_bind_horizontal = self.gaussian_shader.create_bind_group(
             self.grayscale_view,
             linear_sampler,
-            self.gaussian_kernel_view,
-            linear_sampler,
-            (gaussian_kernel_size / self.texture_size[0], 0.0),
-            shader.filter_1d.NormalizerMode.ONE_SUM,
+            gaussian_kernel,
+            (1, 0),
         )
         self.gaussian_bind_vertical = self.gaussian_shader.create_bind_group(
             self.gaussian_tmp_view,
             linear_sampler,
-            self.gaussian_kernel_view,
-            linear_sampler,
-            (0.0, gaussian_kernel_size / self.texture_size[1]),
-            shader.filter_1d.NormalizerMode.ONE_SUM,
+            gaussian_kernel,
+            (0, 1),
         )
 
         self.smooth_threshold_view = texture_util.create_buffer_texture(device, self.texture_size).create_view()

@@ -21,17 +21,17 @@ class TextureShader(wgpu_util.RenderShaderBinding):
             {
                 "binding": 0,
                 "visibility": wgpu.ShaderStage.FRAGMENT,
-                "sampler": {
-                    "type": sampler_type,
-                }
-            },
-            {
-                "binding": 1,
-                "visibility": wgpu.ShaderStage.FRAGMENT,
                 "texture": {
                     "sample_type": texture_util.texture_type_to_sample_type(src_format),
                     "view_dimension": wgpu.TextureViewDimension.d2,
                 },
+            },
+            {
+                "binding": 1,
+                "visibility": wgpu.ShaderStage.FRAGMENT,
+                "sampler": {
+                    "type": sampler_type,
+                }
             },
         ]
         vertex = {
@@ -47,3 +47,14 @@ class TextureShader(wgpu_util.RenderShaderBinding):
             "entry_point": "fs_main",
         }
         super().__init__(device, source, bind_entries, vertex, primitive, fragment)
+
+    def create_bind_group(
+        self,
+        src_view: wgpu.GPUTextureView,
+        src_sampler: wgpu.GPUSampler,
+    ):
+        entries = [
+            {"binding": 0, "resource": src_view},
+            {"binding": 1, "resource": src_sampler},
+        ]
+        return super().create_bind_group(entries)
