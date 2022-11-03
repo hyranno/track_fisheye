@@ -38,7 +38,6 @@ TODO:
   似非コードの印刷と撮影
   リアルタイムでの実行
   ComputeShaderでの実装
-  //
   marker再考
     memo_marker
       fisheyeパターンの変更
@@ -46,7 +45,6 @@ TODO:
       quaternionの計算が粗いのでdcmのまま使う
     id情報の付加
       id付きマーカーの画像出力
-      //
       実写画像からのid読み取り
         新マーカーの印刷と撮影
         MarkerIdReader
@@ -58,6 +56,8 @@ TODO:
         MarkerFormat
         align_patternを[1, -1, -1, 1]にする
           positionのfisheyeとかぶらない、畳み込みで0になる系列
+        MarkerIdReader
+        新マーカーの印刷と撮影
   //////
   MarkerDetector, MarkerFormat, MarkerIdReader, QuickTrackMarker の関係整理
     QuickTrackMarkerはOption<Id>を持つ?
