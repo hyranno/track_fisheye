@@ -9,6 +9,7 @@ from marker_finder_sub.pair_finder import PairFinder
 from marker_finder_sub.id_reader import IdReader
 
 import wgpu
+from concurrent.futures import ThreadPoolExecutor
 
 
 class MarkerFinder:
@@ -53,9 +54,16 @@ class MarkerFinder:
             return []
         pairing_values = self.pairing_evaluator.evaluate(points[0], points[1])
 
-        # multi threading part
-        markers = self.pair_finder.find(points[0], points[1], pairing_values)
-        for m in markers:
-            m.id = self.id_reader.read(m.position, m.ax, m.ay)
-
-        return markers
+        def track(i: int) -> TrackingInfo | None:
+            marker = self.pair_finder.find(points[0][i], points[1], pairing_values[i])
+            if not(marker is None):
+                marker.id = self.id_reader.read(marker.position, marker.ax, marker.ay)
+            return marker
+        markers = []
+        with ThreadPoolExecutor(max_workers=1) as executor:
+            futures = [
+                executor.submit(track, i)
+                for i in range(len(pairing_values))
+            ]
+            markers = [f.result() for f in futures]
+        return [m for m in markers if not(m is None)]

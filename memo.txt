@@ -71,16 +71,22 @@ poetry run python <filename>
         MarkerIdReader
       QcuickTrackMarker -> TrackingInfo
         id: Option<int> を持つ
-  //////
-  marker候補ごとのマルチスレッド?
+  marker候補ごとのマルチスレッド
     pair_finder を単pointに変更
-    https://qiita.com/Jungle-King/items/1d332a91647a3d996b82
-  orthogonalに近似せずperspectiveのまま計算?
-    orthogonalへの近似は、マーカーサイズがカメラとの距離に対して十分に小さい必要がある
-    align_patternをマッチして4点にしたらAruco同様の処理でいけそう
+  ////
+  実行時間の測定
+    example_track_camera より marker_finder でやった方が過程ごとに細かく取れるか
+  x-meansに最小距離条件を付けたい
+    x-means全体が自前での実装になる?
+
+
+課題
   x-mean のwgpu実行?
     compute_shaderの他の部分が遅すぎて苦しいか
     分割に最小距離条件も加えたい
+  orthogonalに近似せずperspectiveのまま計算?
+    orthogonalへの近似は、マーカーサイズがカメラとの距離に対して十分に小さい必要がある
+    align_patternをマッチして4点にしたらAruco同様の処理でいけそう
   python - wgpu を ProtocolBuffer あたりでラップできないか?
     wgslとpy両方でBindingLayoutを書くのだるい
     自動でやってほしい
@@ -90,10 +96,6 @@ poetry run python <filename>
   if -> step
   buffer類はbind_groupではなくlayoutと同時に作ってもよさそう
     データ書き込みの手間と比較したい
-
-パターンの検出
-  multiscale_matcher1d に texture_3dを使う
-  畳み込みじゃないcvのQRコード方式も検討する
 
 精度やバグ
   scale_min, scale_step を見直したほうがいいか?
@@ -129,9 +131,6 @@ Render vs. Compute
   render shader
     render target は2dのみ
   arrays of texture are not supported in current wgsl
-  gaussian blur
-    one big kernel will be efficient rather than repeated blur
-    total_kernel_size = sqrt(num_loop) * kernel_size
 
 
 
@@ -144,6 +143,8 @@ Background
     最大径を求める処理は重くないか?
   新しく高速なものを提案する
     QRコードに代表されるfish_eyeを利用する
+      誤マッチしにくい
+      一発の検出で全てのマーカーを見つける
     wgpuで並列化する
     状態を持たない
       混線したり見失ったトラッカーを再度初期化する必要がない
