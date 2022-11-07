@@ -2,9 +2,7 @@ poetry run python <filename>
 
 似非QRコードの高速姿勢トラッキング
 
-x-meansのGPU実装は作業量が重いし本筋でもないので後でやるか
-
-TODO:
+作業リスト:
   python
     cv2.Mat <-> GPUTexture
     show GPUTexture
@@ -58,12 +56,25 @@ TODO:
           positionのfisheyeとかぶらない、畳み込みで0になる系列
         MarkerIdReader
         新マーカーの印刷と撮影
+  リファクタリング
+    Poetry
+      pyproject.tomlの[tool.poetry]のpackages で importを整理
+      汎用性のないシェーダを個別のモジュールのディレクトリに移動
+    MarkerDetector, MarkerFormat, MarkerIdReader, QuickTrackMarker の関係整理
+      MarkerFormat
+      MarkerFinder
+        SmoothThresholdFilter
+        FisheyeDetector
+        PointsExtractor
+        PairingEvaluator
+        PairFinder
+        MarkerIdReader
+      QcuickTrackMarker -> TrackingInfo
+        id: Option<int> を持つ
   //////
-  MarkerDetector, MarkerFormat, MarkerIdReader, QuickTrackMarker の関係整理
-    QuickTrackMarkerはOption<Id>を持つ?
   marker候補ごとのマルチスレッド?
-    marker_pair_finderのcalc_pairing_valueの後からスレッドごとになる
-      eval_pairing と read_marker に分けるか
+    pair_finder を単pointに変更
+    https://qiita.com/Jungle-King/items/1d332a91647a3d996b82
   orthogonalに近似せずperspectiveのまま計算?
     orthogonalへの近似は、マーカーサイズがカメラとの距離に対して十分に小さい必要がある
     align_patternをマッチして4点にしたらAruco同様の処理でいけそう
