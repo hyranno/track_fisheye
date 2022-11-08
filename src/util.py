@@ -1,9 +1,17 @@
 import os
 import numpy
 import math
+import time
 
 
 project_root = os.path.dirname(__file__)
+
+
+def lap_time(buffer: list[tuple[float, float]] | None = None) -> list[tuple[float, float]]:
+    if buffer is None:
+        return [(time.time(), 0.0)]
+    t = time.time()
+    return [*buffer, (t, t - buffer[-1][0])]
 
 
 def int_to_bits(num: int, numbits: int) -> list[int]:

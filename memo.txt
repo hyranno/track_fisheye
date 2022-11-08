@@ -73,11 +73,12 @@ poetry run python <filename>
         id: Option<int> を持つ
   marker候補ごとのマルチスレッド
     pair_finder を単pointに変更
-  ////
   実行時間の測定
     example_track_camera より marker_finder でやった方が過程ごとに細かく取れるか
-  x-meansに最小距離条件を付けたい
-    x-means全体が自前での実装になる?
+  ////
+  x-meansのGPU実装
+    points_extractor が遅いので
+    x-meansに最小距離条件を付けたい
 
 
 課題

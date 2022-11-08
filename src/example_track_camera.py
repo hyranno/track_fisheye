@@ -29,7 +29,7 @@ texture_size = frame.shape[1], frame.shape[0], 1
 src_view = texture_util.create_buffer_texture(device, texture_size).create_view()
 preview_texture = texture_util.create_buffer_texture(device, texture_size)
 aqueue: asyncio.Queue[str] = asyncio.Queue()
-finder = MarkerFinder(device, src_view, MarkerFormat(), DetectorParams(20, 200, 1.08, 0.6))
+finder = MarkerFinder(device, src_view, MarkerFormat(), DetectorParams(20, 200, 1.08, 0.6), 80, True)
 
 fps = 10
 fourcc = cv2.VideoWriter_fourcc(*'MJPG')

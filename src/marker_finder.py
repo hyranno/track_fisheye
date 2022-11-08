@@ -1,3 +1,4 @@
+import util
 import texture_util
 from tracking_info import TrackingInfo
 from marker_format import MarkerFormat
@@ -20,7 +21,9 @@ class MarkerFinder:
         marker_format: MarkerFormat,
         detector_params: DetectorParams = None,
         pairing_threshold: int = 80,
+        print_laps: bool = False
     ):
+        self.print_laps = print_laps
         self.device = device
         texture_size = src_view.texture.size
         self.preproced_view = texture_util.create_buffer_texture(device, texture_size).create_view()
@@ -45,14 +48,21 @@ class MarkerFinder:
         )
 
     def find(self) -> list[TrackingInfo]:
+        laps = util.lap_time()
+
         command_encoder = self.device.create_command_encoder()
         self.preprocess_filter.push_passes_to(command_encoder)
         self.pattern_matcher.push_passes_to(command_encoder)
         self.device.queue.submit([command_encoder.finish()])
+        laps = util.lap_time(laps)
+
         points = self.points_extractor.extract()
+        laps = util.lap_time(laps)
+
         if (len(points[1]) < 2):
             return []
         pairing_values = self.pairing_evaluator.evaluate(points[0], points[1])
+        laps = util.lap_time(laps)
 
         def track(i: int) -> TrackingInfo | None:
             marker = self.pair_finder.find(points[0][i], points[1], pairing_values[i])
@@ -66,4 +76,8 @@ class MarkerFinder:
                 for i in range(len(pairing_values))
             ]
             markers = [f.result() for f in futures]
+        laps = util.lap_time(laps)
+
+        if self.print_laps:
+            print(['{:.4f}'.format(v[1]) for v in laps])
         return [m for m in markers if not(m is None)]
