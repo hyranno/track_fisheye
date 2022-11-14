@@ -20,9 +20,12 @@ aioconsole = "^0.5.1"
 ldpc = "^0.1.45"
 
 [tool.poetry.dev-dependencies]
-pytest = "^5.2"
+pytest = "^7.0"
 pyproject-flake8 = "^0.0.1-alpha.5"
 mypy = "^0.971"
+
+[tool.pytest.ini_options]
+pythonpath = "src"
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]

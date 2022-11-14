@@ -20,7 +20,7 @@ x-meansをGPU(ComputeShader)で回す
 各データ点のクラスタ分割計算用バッファ
 各クラスタの計算用バッファ
 
-k-means on GPU
+x-means on GPU
   並列計算
     クラスタ割り当て: 完全に並列
     クラスタ移動の検知: 2クラスタの総和
@@ -34,6 +34,7 @@ k-means on GPU
       k2-means実行後にソートする
     クラスタのサイズによっては複数workgroupにまたがる
       workgroup内計算結果を合算する必要がある
+      今回は実装しない(単一workgroupに全部乗ると仮定)
 
 x-means on GPU
   それぞれ別の呼び出しで実行

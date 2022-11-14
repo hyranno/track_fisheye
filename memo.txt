@@ -77,8 +77,18 @@ poetry run python <filename>
     example_track_camera より marker_finder でやった方が過程ごとに細かく取れるか
   ////
   x-meansのGPU実装
+    request_device(required_limits=)
+      workgroup_size
     points_extractor が遅いので
     x-meansに最小距離条件を付けたい
+    k2means
+      test
+    align
+      test
+    calc_BIC
+    xmeans
+      test
+    data_range, cluster_range を BufferResource で渡す
 
 
 課題
@@ -127,6 +137,12 @@ Render vs. Compute
     別々のshaderに処理を分割してもよいか
       remap, filter_1d(convolution), threshold, boolean_ops
   wgpu.FilterMode.nearest が効いてない
+  dynamic_offset - buffer_offset_alignment
+    部分スライスを得たいとき不便
+    offset, length を送る方法
+      同じバッファをバインドしても並列化してくれるか?
+    別のバッファを確保する方法
+      バッファを新たに確保するのは遅そう
   compute shader
     textureSampleが使えないのでテクスチャの任意の点を取るのが面倒くさい
   render shader

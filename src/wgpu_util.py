@@ -2,6 +2,7 @@ import os
 import wgpu
 from wgpu.gui.auto import WgpuCanvas
 import wgpu.backends.rs  # noqa: F401, Select Rust backend
+from dataclasses import dataclass
 
 import typing
 
@@ -11,6 +12,18 @@ shader_defaults = {
     'header': open(os.path.join(os.path.dirname(__file__), 'shaders/header.wgsl'), "r").read(),
     'vert2d': open(os.path.join(os.path.dirname(__file__), 'shaders/vert_full2d.wgsl'), "r").read(),
 }
+
+
+class BufferResource:
+    def __init__(
+        self,
+        buffer: wgpu.GPUBuffer,
+        offset: int = -1,
+        size: int = -1,
+    ):
+        self.buffer = buffer
+        self.offset = max(0, offset)
+        self.size = buffer.size if (size < 0) else size
 
 
 def get_context(canvas: wgpu.WgpuCanvasInterface) -> tuple[wgpu.GPUDevice, wgpu.GPUCanvasContext]:
@@ -64,7 +77,7 @@ def push_compute_pass(
     compute_pass = encoder.begin_compute_pass()
     compute_pass.set_pipeline(pipeline)
     compute_pass.set_bind_group(0, bind, [], 0, 0)
-    compute_pass.dispatch_workgroups(size[0], size[1], size[2])  # x y z
+    compute_pass.dispatch_workgroups(*size)  # x y z
     compute_pass.end()
 
 
