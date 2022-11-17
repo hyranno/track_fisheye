@@ -2,7 +2,6 @@ import os
 import wgpu
 from wgpu.gui.auto import WgpuCanvas
 import wgpu.backends.rs  # noqa: F401, Select Rust backend
-from dataclasses import dataclass
 
 import typing
 

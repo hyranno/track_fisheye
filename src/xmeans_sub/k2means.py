@@ -66,16 +66,16 @@ class K2Means(wgpu_util.ComputeShaderBinding):
 
     def create_bind_group(
         self,
-        data_range: tuple[int, int],
+        data_ranges: list[tuple[int, int]],
         points: wgpu_util.BufferResource,
         dest_assignments: wgpu_util.BufferResource,
-        cluster_ids: tuple[int, int],
+        cluster_ids: list[tuple[int, int]],
         dest_counts: wgpu_util.BufferResource,
         dest_means: wgpu_util.BufferResource,
         dest_BICs: wgpu_util.BufferResource,
     ):
         buffer_data_range = self.device.create_buffer_with_data(
-            data=numpy.array(data_range, dtype=numpy.dtype('<i'), order='C'),  # <u32
+            data=numpy.array(data_ranges, dtype=numpy.dtype('<i'), order='C'),  # <u32
             usage=wgpu.BufferUsage.STORAGE
         )
         buffer_cluster_ids = self.device.create_buffer_with_data(

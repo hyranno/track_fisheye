@@ -58,28 +58,18 @@ class TestK2Means:
 
         k2m = K2Means(device)
         pipeline = k2m.create_compute_pipeline()
-        bind0 = k2m.create_bind_group(
-            (0, offset_datas),
+        bind = k2m.create_bind_group(
+            [(0, offset_datas), (offset_datas, offset_datas)],
             wgpu_util.BufferResource(buffer_datas),
             wgpu_util.BufferResource(buffer_assignments),
-            (0, 1),
-            wgpu_util.BufferResource(buffer_counts),
-            wgpu_util.BufferResource(buffer_means),
-            wgpu_util.BufferResource(buffer_BICs),
-        )
-        bind1 = k2m.create_bind_group(
-            (offset_datas, offset_datas),
-            wgpu_util.BufferResource(buffer_datas),
-            wgpu_util.BufferResource(buffer_assignments),
-            (2, 3),
+            [(0, 1), (2, 3)],
             wgpu_util.BufferResource(buffer_counts),
             wgpu_util.BufferResource(buffer_means),
             wgpu_util.BufferResource(buffer_BICs),
         )
 
         command_encoder = device.create_command_encoder()
-        wgpu_util.push_compute_pass(command_encoder, pipeline, bind0, (1, 1, 1))
-        wgpu_util.push_compute_pass(command_encoder, pipeline, bind1, (1, 1, 1))
+        wgpu_util.push_compute_pass(command_encoder, pipeline, bind, (2, 1, 1))
         device.queue.submit([command_encoder.finish()])
 
         res_assignments = numpy.frombuffer(

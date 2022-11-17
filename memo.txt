@@ -83,11 +83,14 @@ poetry run python <filename>
     x-meansに最小距離条件を付けたい
     k2means
       var<workgroup> array<bool> の挙動がおかしい?
+      calc_BIC
       //
-    calc_BIC
+      ワークグループ数を増やして各クラスタを並列に
     align
     copy
     xmeans
+      各クラスタを並列に処理するにはワークグループ数を増やす必要がある
+        py側マルチスレッドや再帰とは相性が悪そう
       test
 
 
