@@ -82,13 +82,13 @@ poetry run python <filename>
     points_extractor が遅いので
     x-meansに最小距離条件を付けたい
     k2means
-      test
-    align
-      test
+      var<workgroup> array<bool> の挙動がおかしい?
+      //
     calc_BIC
+    align
+    copy
     xmeans
       test
-    data_range, cluster_range を BufferResource で渡す
 
 
 課題

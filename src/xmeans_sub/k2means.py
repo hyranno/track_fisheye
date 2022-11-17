@@ -34,21 +34,28 @@ class K2Means(wgpu_util.ComputeShaderBinding):
                 }
             },
             {
-                "binding": 3,  # cluster range
+                "binding": 3,  # cluster ids
                 "visibility": wgpu.ShaderStage.COMPUTE,
                 "buffer": {
                     "type": wgpu.BufferBindingType.read_only_storage,
                 }
             },
             {
-                "binding": 4,  # dest centers
+                "binding": 4,  # dest cluster data counts
                 "visibility": wgpu.ShaderStage.COMPUTE,
                 "buffer": {
                     "type": wgpu.BufferBindingType.storage,
                 }
             },
             {
-                "binding": 5,  # dest cluster data counts
+                "binding": 5,  # dest means
+                "visibility": wgpu.ShaderStage.COMPUTE,
+                "buffer": {
+                    "type": wgpu.BufferBindingType.storage,
+                }
+            },
+            {
+                "binding": 6,  # dest BICs
                 "visibility": wgpu.ShaderStage.COMPUTE,
                 "buffer": {
                     "type": wgpu.BufferBindingType.storage,
@@ -62,24 +69,26 @@ class K2Means(wgpu_util.ComputeShaderBinding):
         data_range: tuple[int, int],
         points: wgpu_util.BufferResource,
         dest_assignments: wgpu_util.BufferResource,
-        cluster_range: tuple[int, int],
-        dest_centers: wgpu_util.BufferResource,
+        cluster_ids: tuple[int, int],
         dest_counts: wgpu_util.BufferResource,
+        dest_means: wgpu_util.BufferResource,
+        dest_BICs: wgpu_util.BufferResource,
     ):
         buffer_data_range = self.device.create_buffer_with_data(
-            data=numpy.array(data_range, dtype=numpy.dtype('<i'), order='C'),
+            data=numpy.array(data_range, dtype=numpy.dtype('<i'), order='C'),  # <u32
             usage=wgpu.BufferUsage.STORAGE
         )
-        buffer_cluster_range = self.device.create_buffer_with_data(
-            data=numpy.array(cluster_range, dtype=numpy.dtype('<i'), order='C'),
+        buffer_cluster_ids = self.device.create_buffer_with_data(
+            data=numpy.array(cluster_ids, dtype=numpy.dtype('<i'), order='C'),  # u<32
             usage=wgpu.BufferUsage.STORAGE
         )
         entries = [
             {"binding": 0, "resource": vars(wgpu_util.BufferResource(buffer_data_range))},
             {"binding": 1, "resource": vars(points)},
             {"binding": 2, "resource": vars(dest_assignments)},
-            {"binding": 3, "resource": vars(wgpu_util.BufferResource(buffer_cluster_range))},
-            {"binding": 4, "resource": vars(dest_centers)},
-            {"binding": 5, "resource": vars(dest_counts)},
+            {"binding": 3, "resource": vars(wgpu_util.BufferResource(buffer_cluster_ids))},
+            {"binding": 4, "resource": vars(dest_counts)},
+            {"binding": 5, "resource": vars(dest_means)},
+            {"binding": 6, "resource": vars(dest_BICs)},
         ]
         return super().create_bind_group(entries)

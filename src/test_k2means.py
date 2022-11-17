@@ -37,20 +37,24 @@ class TestK2Means:
             | wgpu.BufferUsage.COPY_DST
         )
 
+        num_clusters = 4
         buffer_assignments = device.create_buffer(
             size=len(datas)*sizeof(c_int),
             usage=wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC
         )
-        buffer_centers = device.create_buffer(
-            size=4*(2 * sizeof(c_float)),
+        buffer_counts = device.create_buffer(
+            size=num_clusters * sizeof(c_int),
             usage=wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC
         )
-        buffer_counts = device.create_buffer(
-            size=4 * sizeof(c_int),
+        buffer_means = device.create_buffer(
+            size=num_clusters * (2 * sizeof(c_float)),
+            usage=wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC
+        )
+        buffer_BICs = device.create_buffer(
+            size=num_clusters * sizeof(c_float),
             usage=wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC
         )
         offset_datas = int(len(datas) / 2)
-        offset_clusters = 2
 
         k2m = K2Means(device)
         pipeline = k2m.create_compute_pipeline()
@@ -58,17 +62,19 @@ class TestK2Means:
             (0, offset_datas),
             wgpu_util.BufferResource(buffer_datas),
             wgpu_util.BufferResource(buffer_assignments),
-            (0, offset_clusters),
-            wgpu_util.BufferResource(buffer_centers),
+            (0, 1),
             wgpu_util.BufferResource(buffer_counts),
+            wgpu_util.BufferResource(buffer_means),
+            wgpu_util.BufferResource(buffer_BICs),
         )
         bind1 = k2m.create_bind_group(
             (offset_datas, offset_datas),
             wgpu_util.BufferResource(buffer_datas),
             wgpu_util.BufferResource(buffer_assignments),
-            (offset_clusters, offset_clusters),
-            wgpu_util.BufferResource(buffer_centers),
+            (2, 3),
             wgpu_util.BufferResource(buffer_counts),
+            wgpu_util.BufferResource(buffer_means),
+            wgpu_util.BufferResource(buffer_BICs),
         )
 
         command_encoder = device.create_command_encoder()
@@ -80,19 +86,24 @@ class TestK2Means:
             device.queue.read_buffer(buffer_assignments),
             dtype=numpy.dtype('<i'),
         )
-        res_centers = numpy.frombuffer(
-            device.queue.read_buffer(buffer_centers),
-            dtype=numpy.dtype('<f'),
-        ).reshape([-1, 2])
         res_counts = numpy.frombuffer(
             device.queue.read_buffer(buffer_counts),
             dtype=numpy.dtype('<i'),
         )
+        res_means = numpy.frombuffer(
+            device.queue.read_buffer(buffer_means),
+            dtype=numpy.dtype('<f'),
+        ).reshape([-1, 2])
+        res_BICs = numpy.frombuffer(
+            device.queue.read_buffer(buffer_BICs),
+            dtype=numpy.dtype('<f'),
+        )
 
         print("result")
         print(res_assignments)
-        print(res_centers)
         print(res_counts)
+        print(res_means)
+        print(res_BICs)
         # assert 1 == 1
 
         aligner = Aligner(device)
@@ -113,23 +124,18 @@ class TestK2Means:
         wgpu_util.push_compute_pass(command_encoder, pipeline, bind1, (1, 1, 1))
         device.queue.submit([command_encoder.finish()])
 
+        res_datas = numpy.frombuffer(
+            device.queue.read_buffer(buffer_datas),
+            dtype=numpy.dtype('<f'),
+        ).reshape([-1, 2])
         res_assignments = numpy.frombuffer(
             device.queue.read_buffer(buffer_assignments),
             dtype=numpy.dtype('<i'),
         )
-        res_centers = numpy.frombuffer(
-            device.queue.read_buffer(buffer_centers),
-            dtype=numpy.dtype('<f'),
-        ).reshape([-1, 2])
-        res_counts = numpy.frombuffer(
-            device.queue.read_buffer(buffer_counts),
-            dtype=numpy.dtype('<i'),
-        )
 
         print("result")
+        print(res_datas)
         print(res_assignments)
-        print(res_centers)
-        print(res_counts)
         # assert 1 == 1
 
 

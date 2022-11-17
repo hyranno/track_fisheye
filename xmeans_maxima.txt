@@ -56,10 +56,7 @@ BIC_simp(data) := block(
   mean : calc_mean(data),
   variance : calc_variance(data, mean),
   logL : num_data * (-num_dimension/2) * log(2*%pi) + (-1/2) * lsum(
-    lsum(
-      (data[d][i]-mean[d][1])^2,
-      i, makelist(ti, ti, 1, num_data)
-    ) / variance[d][1] + num_data * log(variance[d][1]),
+    num_data * (1 + log(variance[d][1])),
     d, makelist(td, td, 1, num_dimension)
   ),
   q : 2 * num_dimension,
