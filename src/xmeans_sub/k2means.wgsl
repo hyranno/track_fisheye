@@ -18,7 +18,8 @@ struct ArrayVec2U32 {
 @group(0) @binding(3) var<storage, read> cluster_pairs: ArrayVec2U32;
 @group(0) @binding(4) var<storage, read_write> counts: array_i32;
 @group(0) @binding(5) var<storage, read_write> means: array_Point;
-@group(0) @binding(6) var<storage, read_write> BICs: array_f32;
+@group(0) @binding(6) var<storage, read_write> variances: array_Point;
+@group(0) @binding(7) var<storage, read_write> BICs: array_f32;
 
 struct IndexRange {
   offset: u32,
@@ -121,7 +122,12 @@ fn calc_variance(lid: u32, cluster: i32) -> Point {
     buffer_variance[lid] = Point(0.0);
   }
   workgroupBarrier();
-  return sum_Point(lid, &buffer_variance) / f32(counts[cid]);
+  let variance = sum_Point(lid, &buffer_variance) / f32(counts[cid]);
+  if (lid == 0u) {
+    variances[cid] = variance;
+  }
+  storageBarrier();
+  return variance;
 }
 
 fn calc_BIC(lid: u32, cluster: i32) -> f32 {

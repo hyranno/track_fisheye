@@ -38,16 +38,16 @@ class Aligner(wgpu_util.ComputeShaderBinding):
 
     def create_bind_group(
         self,
-        data_range: tuple[int, int],
+        data_ranges: list[tuple[int, int]],
         points: wgpu_util.BufferResource,
         assignments: wgpu_util.BufferResource,
     ):
-        buffer_data_range = self.device.create_buffer_with_data(
-            data=numpy.array(data_range, dtype=numpy.dtype('<i'), order='C'),
+        buffer_data_ranges = self.device.create_buffer_with_data(
+            data=numpy.array(data_ranges, dtype=numpy.dtype('<i'), order='C'),
             usage=wgpu.BufferUsage.STORAGE
         )
         entries = [
-            {"binding": 0, "resource": vars(wgpu_util.BufferResource(buffer_data_range))},
+            {"binding": 0, "resource": vars(wgpu_util.BufferResource(buffer_data_ranges))},
             {"binding": 1, "resource": vars(points)},
             {"binding": 2, "resource": vars(assignments)},
         ]
