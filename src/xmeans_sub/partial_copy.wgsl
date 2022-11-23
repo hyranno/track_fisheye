@@ -10,21 +10,24 @@ type array_Point = array<Point, 256>;
 struct ArrayVec2U32 {
   value: array<vec2<u32>>,
 };
+struct Cluster {
+  count: i32,
+  _: i32,
+  mean: Point,
+  variance: Point,
+  BIC: f32,
+  _: i32,
+};
+type array_Cluster = array<Cluster, 256>;
 
 @group(0) @binding(0) var<storage, read> src_datas: array_Point;
-@group(0) @binding(1) var<storage, read> src_counts: array_i32;
-@group(0) @binding(2) var<storage, read> src_means: array_Point;
-@group(0) @binding(3) var<storage, read> src_variances: array_Point;
-@group(0) @binding(4) var<storage, read> src_BICs: array_f32;
+@group(0) @binding(1) var<storage, read> src_clusters: array_Cluster;
 
-@group(0) @binding(5) var<storage, read_write> dest_datas: array_Point;
-@group(0) @binding(6) var<storage, read_write> dest_counts: array_i32;
-@group(0) @binding(7) var<storage, read_write> dest_means: array_Point;
-@group(0) @binding(8) var<storage, read_write> dest_variances: array_Point;
-@group(0) @binding(9) var<storage, read_write> dest_BICs: array_f32;
+@group(0) @binding(2) var<storage, read_write> dest_datas: array_Point;
+@group(0) @binding(3) var<storage, read_write> dest_clusters: array_Cluster;
 
-@group(0) @binding(10) var<storage, read> data_ranges: ArrayVec2U32;
-@group(0) @binding(11) var<storage, read> cluster_pairs: ArrayVec2U32;
+@group(0) @binding(4) var<storage, read> data_ranges: ArrayVec2U32;
+@group(0) @binding(5) var<storage, read> cluster_pairs: ArrayVec2U32;
 
 struct IndexRange {
   offset: u32,
@@ -45,9 +48,9 @@ fn main(
   let cluster_ids = cluster_pairs.value[wid.x];
   if (lid < 2u) {
     let cid = cluster_ids[lid];
-    dest_counts[cid] = src_counts[cid];
-    dest_means[cid] = src_means[cid];
-    dest_variances[cid] = src_variances[cid];
-    dest_BICs[cid] = dest_BICs[cid];
+    dest_clusters[cid].count = src_clusters[cid].count;
+    dest_clusters[cid].mean = src_clusters[cid].mean;
+    dest_clusters[cid].variance = src_clusters[cid].variance;
+    dest_clusters[cid].BIC = src_clusters[cid].BIC;
   }
 }

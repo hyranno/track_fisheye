@@ -11,15 +11,21 @@ type array_Point = array<Point, 256>;
 struct ArrayVec2U32 {
   value: array<vec2<u32>>,
 };
+struct Cluster {
+  count: i32,
+  _: i32,
+  mean: Point,
+  variance: Point,
+  BIC: f32,
+  _: i32,
+};
+type array_Cluster = array<Cluster, 256>;
 
 @group(0) @binding(0) var<storage, read> data_ranges: ArrayVec2U32;
 @group(0) @binding(1) var<storage, read> datas: array_Point;
 @group(0) @binding(2) var<storage, read_write> assignments: array_i32;
 @group(0) @binding(3) var<storage, read> cluster_pairs: ArrayVec2U32;
-@group(0) @binding(4) var<storage, read_write> counts: array_i32;
-@group(0) @binding(5) var<storage, read_write> means: array_Point;
-@group(0) @binding(6) var<storage, read_write> variances: array_Point;
-@group(0) @binding(7) var<storage, read_write> BICs: array_f32;
+@group(0) @binding(4) var<storage, read_write> clusters: array_Cluster;
 
 struct IndexRange {
   offset: u32,
@@ -60,8 +66,8 @@ fn sum_Point(lid: u32, src: ptr<workgroup, array_Point>) -> Point {
 
 
 fn select_cluster(data: Point, cluster0: u32, cluster1: u32) -> i32 {
-  let d0 = distance(data, means[cluster0]);
-  let d1 = distance(data, means[cluster1]);
+  let d0 = distance(data, clusters[cluster0].mean);
+  let d1 = distance(data, clusters[cluster1].mean);
   return select(0, 1, d1 < d0);
 }
 
@@ -85,7 +91,7 @@ fn calc_count(lid: u32, cluster: i32) -> i32 {
   let count = sum_i32(lid, &buffer_count);
   if (lid == 0u) {
     let cid = cluster_ids[cluster];
-    counts[cid] = count;
+    clusters[cid].count = count;
   }
   storageBarrier();
   return count;
@@ -102,9 +108,9 @@ fn calc_mean(lid: u32, cluster: i32) -> Point {
   }
   workgroupBarrier();
   let cid = cluster_ids[cluster];
-  let mean = sum_Point(lid, &buffer_mean) / f32(counts[cid]);
+  let mean = sum_Point(lid, &buffer_mean) / f32(clusters[cid].count);
   if (lid == 0u) {
-    means[cid] = mean;
+    clusters[cid].mean = mean;
   }
   storageBarrier();
   return mean;
@@ -116,15 +122,15 @@ fn calc_variance(lid: u32, cluster: i32) -> Point {
   let cid = cluster_ids[cluster];
   let is_match_cluster = (lid < data_range.length) && (cluster == assignments[data_id]);
   if (is_match_cluster) {
-    let d = (datas[data_id] - means[cid]);
+    let d = (datas[data_id] - clusters[cid].mean);
     buffer_variance[lid] = d * d;
   } else {
     buffer_variance[lid] = Point(0.0);
   }
   workgroupBarrier();
-  let variance = sum_Point(lid, &buffer_variance) / f32(counts[cid]);
+  let variance = sum_Point(lid, &buffer_variance) / f32(clusters[cid].count);
   if (lid == 0u) {
-    variances[cid] = variance;
+    clusters[cid].variance = variance;
   }
   storageBarrier();
   return variance;
@@ -132,7 +138,7 @@ fn calc_variance(lid: u32, cluster: i32) -> Point {
 
 fn calc_BIC(lid: u32, cluster: i32) -> f32 {
   let cid = cluster_ids[cluster];
-  let num_data = f32(counts[cid]);
+  let num_data = f32(clusters[cid].count);
   let num_dimension = f32(DIM);
   let variance = calc_variance(lid, cluster);
   let v: Point = num_data * (Point(1.0) + log(variance));
@@ -140,7 +146,7 @@ fn calc_BIC(lid: u32, cluster: i32) -> f32 {
   let q = 2.0 * num_dimension;
   let bic = -2.0 * logL + q * log(num_data);
   if (lid == 0u) {
-    BICs[cid] = bic;
+    clusters[cid].BIC = bic;
   }
   storageBarrier();
   return bic;
@@ -158,8 +164,8 @@ fn main(
   changes[lid] = 0;
   workgroupBarrier();
   if (lid == 0u) {
-    means[cluster_ids[0]] = datas[data_range.offset + 0u];
-    means[cluster_ids[1]] = datas[data_range.offset + data_range.length - 1u];
+    clusters[cluster_ids[0]].mean = datas[data_range.offset + 0u];
+    clusters[cluster_ids[1]].mean = datas[data_range.offset + data_range.length - 1u];
   }
   if (lid < data_range.length) {
     let data_id = data_range.offset + lid;

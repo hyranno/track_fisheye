@@ -3,7 +3,7 @@ import wgpu
 import numpy
 
 import wgpu_util
-from .buffers import ClusteringBuffers
+from .buffers import ClusterBuffer
 
 
 class K2Means(wgpu_util.ComputeShaderBinding):
@@ -42,28 +42,7 @@ class K2Means(wgpu_util.ComputeShaderBinding):
                 }
             },
             {
-                "binding": 4,  # dest cluster data counts
-                "visibility": wgpu.ShaderStage.COMPUTE,
-                "buffer": {
-                    "type": wgpu.BufferBindingType.storage,
-                }
-            },
-            {
-                "binding": 5,  # dest means
-                "visibility": wgpu.ShaderStage.COMPUTE,
-                "buffer": {
-                    "type": wgpu.BufferBindingType.storage,
-                }
-            },
-            {
-                "binding": 6,  # dest variances
-                "visibility": wgpu.ShaderStage.COMPUTE,
-                "buffer": {
-                    "type": wgpu.BufferBindingType.storage,
-                }
-            },
-            {
-                "binding": 7,  # dest BICs
+                "binding": 4,  # dest clusters
                 "visibility": wgpu.ShaderStage.COMPUTE,
                 "buffer": {
                     "type": wgpu.BufferBindingType.storage,
@@ -74,7 +53,7 @@ class K2Means(wgpu_util.ComputeShaderBinding):
 
     def create_bind_group(
         self,
-        buffers: ClusteringBuffers,
+        buffer: ClusterBuffer,
         dest_assignments: wgpu_util.BufferResource,
         data_ranges: list[tuple[int, int]],
         cluster_ids: list[tuple[int, int]],
@@ -89,12 +68,9 @@ class K2Means(wgpu_util.ComputeShaderBinding):
         )
         entries = [
             {"binding": 0, "resource": vars(wgpu_util.BufferResource(buffer_data_range))},
-            {"binding": 1, "resource": vars(buffers.datas)},
+            {"binding": 1, "resource": vars(buffer.datas)},
             {"binding": 2, "resource": vars(dest_assignments)},
             {"binding": 3, "resource": vars(wgpu_util.BufferResource(buffer_cluster_ids))},
-            {"binding": 4, "resource": vars(buffers.counts)},
-            {"binding": 5, "resource": vars(buffers.means)},
-            {"binding": 6, "resource": vars(buffers.variances)},
-            {"binding": 7, "resource": vars(buffers.BICs)},
+            {"binding": 4, "resource": vars(buffer.clusters)},
         ]
         return super().create_bind_group(entries)

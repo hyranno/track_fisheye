@@ -30,18 +30,15 @@ class TestXMeans:
         xm = XMeans(device, datas, 4, 1.0)
         buffers = xm.xmeans()
 
-        res_assignments = numpy.frombuffer(
-            device.queue.read_buffer(res.assignments_buffer),
-            dtype=numpy.dtype('<i'),
-        )
-        res_clusters = buffers.read_cluster_with_size()
+        res_datas = numpy.frombuffer(
+            device.queue.read_buffer(buffers.datas.buffer),
+            dtype=numpy.dtype('<f'),
+        ).reshape([-1, 2])
+        res_clusters = buffers.read_clusters_valid_sized()
 
         print("result")
-        print(res_assignments)
-        print(res_clusters.counts)
-        print(res_clusters.means)
-        print(res_clusters.variances)
-        print(res_clusters.BICs)
+        print(res_datas)
+        print(res_clusters)
         # assert 1 == 1
 
 

@@ -1,5 +1,5 @@
 
-from xmeans_sub.buffers import ClusteringBuffers
+from xmeans_sub.buffers import ClusterBuffer
 from xmeans_sub.k2means import K2Means
 from xmeans_sub.aligner import Aligner
 import wgpu_util
@@ -32,32 +32,11 @@ class TestK2Means:
         )
 
         num_clusters = 4
-        buffers = ClusteringBuffers(device, datas, num_clusters)
+        buffers = ClusterBuffer(device, datas, num_clusters)
         buffer_assignments = device.create_buffer(
             size=len(datas)*sizeof(c_int),
             usage=wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC
         )
-
-        """
-        buffer_datas = device.create_buffer_with_data(
-            data=datas.astype(dtype=numpy.dtype('<f'), order='C').data,
-            usage=wgpu.BufferUsage.STORAGE
-            | wgpu.BufferUsage.COPY_SRC
-            | wgpu.BufferUsage.COPY_DST
-        )
-        buffer_counts = device.create_buffer(
-        size=num_clusters * sizeof(c_int),
-        usage=wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC
-        )
-        buffer_means = device.create_buffer(
-        size=num_clusters * (2 * sizeof(c_float)),
-        usage=wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC
-        )
-        buffer_BICs = device.create_buffer(
-        size=num_clusters * sizeof(c_float),
-        usage=wgpu.BufferUsage.STORAGE | wgpu.BufferUsage.COPY_SRC
-        )
-        """
         offset_datas = int(len(datas) / 2)
 
         k2m = K2Means(device)
@@ -77,29 +56,11 @@ class TestK2Means:
             device.queue.read_buffer(buffer_assignments),
             dtype=numpy.dtype('<i'),
         )
-        res_counts = numpy.frombuffer(
-            device.queue.read_buffer(buffers.counts.buffer),
-            dtype=numpy.dtype('<i'),
-        )
-        res_means = numpy.frombuffer(
-            device.queue.read_buffer(buffers.means.buffer),
-            dtype=numpy.dtype('<f'),
-        ).reshape([-1, 2])
-        res_variances = numpy.frombuffer(
-            device.queue.read_buffer(buffers.variances.buffer),
-            dtype=numpy.dtype('<f'),
-        ).reshape([-1, 2])
-        res_BICs = numpy.frombuffer(
-            device.queue.read_buffer(buffers.BICs.buffer),
-            dtype=numpy.dtype('<f'),
-        )
+        res_clusters = buffers.read_clusters_raw()
 
         print("result")
         print(res_assignments)
-        print(res_counts)
-        print(res_means)
-        print(res_variances)
-        print(res_BICs)
+        print(res_clusters)
         # assert 1 == 1
 
         aligner = Aligner(device)
