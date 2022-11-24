@@ -51,7 +51,7 @@ class XMeans:
         id1 = parent_id | (1 << (self.max_depth - 1) >> depth)
         return (id0, id1)
 
-    def xmeans(self) -> ClusterBuffer:
+    def process(self) -> ClusterBuffer:
         depth = 0
         k2tasks = [K2Task(0, self.data_len, 0)]
         while (0 < len(k2tasks)) and (depth < self.max_depth):
@@ -122,11 +122,12 @@ class XMeans:
         return filtered_tasks
 
     def calc_sub_BIC(self, cids: tuple[int, int], sub: list[Cluster]) -> float:
-        b = numpy.linalg.norm(
-                numpy.array(sub[cids[0]].mean) - numpy.array(sub[cids[1]].mean)
-            )**2 / (
-            math.prod(numpy.array(sub[cids[0]].variance)) + math.prod(numpy.array(sub[cids[1]].variance))
-        )
+        with numpy.errstate(divide='ignore'):
+            b = numpy.linalg.norm(
+                    numpy.array(sub[cids[0]].mean) - numpy.array(sub[cids[1]].mean)
+                )**2 / (
+                math.prod(numpy.array(sub[cids[0]].variance)) + math.prod(numpy.array(sub[cids[1]].variance))
+            )
         k = 0.5 * (1 + math.erf(0.5 * b))
         q = 8  # 2 * 2 * num_dimension
         return (

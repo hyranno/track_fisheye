@@ -1,15 +1,8 @@
 import cv_util
+from xmeans import XMeans
 
 import numpy
 import wgpu
-from pyclustering.cluster import xmeans
-
-
-def xmcluster(points) -> xmeans.xmeans:
-    initial_center = xmeans.kmeans_plusplus_initializer(points, 1).initialize()
-    xm = xmeans.xmeans(points, initial_center, ccore=True)
-    xm.process()
-    return xm
 
 
 class PointsExtractor:
@@ -27,14 +20,18 @@ class PointsExtractor:
 
         positives = list(zip(*numpy.where(127 < src_np[:, :, 2])))
         negatives = list(zip(*numpy.where(127 < src_np[:, :, 1])))
-
-        points_position = numpy.array([])
-        if 0 < len(positives):
-            xm_positives = xmcluster(positives)
-            points_position = numpy.fliplr(numpy.array(xm_positives.get_centers()))
-        points_rotation = numpy.array([])
-        if 0 < len(negatives):
-            xm_negatives = xmcluster(negatives)
-            points_rotation = numpy.fliplr(numpy.array(xm_negatives.get_centers()))
+        # """
+        max_depth = 8  # 2^8 = 256 data points
+        min_distance = 3.0
+        points_position = numpy.array([[positives[0][1], positives[0][0]]])
+        if 2 <= len(positives):
+            xm_positives = XMeans(self.device, numpy.array(positives), max_depth, min_distance)
+            clusters = xm_positives.process().read_clusters_valid_sized()
+            points_position = numpy.array([[c.mean[1], c.mean[0]] for c in clusters])
+        points_rotation = numpy.array([[negatives[0][1], negatives[0][0]]])
+        if 2 <= len(negatives):
+            xm_negatives = XMeans(self.device, numpy.array(negatives), max_depth, min_distance)
+            clusters = xm_negatives.process().read_clusters_valid_sized()
+            points_rotation = numpy.array([[c.mean[1], c.mean[0]] for c in clusters])
 
         return (points_position, points_rotation)

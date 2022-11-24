@@ -28,7 +28,7 @@ class TestXMeans:
         )
 
         xm = XMeans(device, datas, 4, 1.0)
-        buffers = xm.xmeans()
+        buffers = xm.process()
 
         res_datas = numpy.frombuffer(
             device.queue.read_buffer(buffers.datas.buffer),

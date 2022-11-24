@@ -75,7 +75,6 @@ poetry run python <filename>
     pair_finder を単pointに変更
   実行時間の測定
     example_track_camera より marker_finder でやった方が過程ごとに細かく取れるか
-  ////
   x-meansのGPU実装
     request_device(required_limits=)
       workgroup_size
@@ -86,7 +85,6 @@ poetry run python <filename>
       calc_BIC
       ワークグループ数を増やして各クラスタを並列に
     align
-    //
     copy
       storageのバインド数が多すぎる
         ctypes.Structure で array<ClusterData> のバッファにする?
@@ -94,7 +92,12 @@ poetry run python <filename>
     xmeans
       各クラスタを並列に処理するにはワークグループ数を増やす必要がある
         py側マルチスレッドや再帰とは相性が悪そう
-      test
+  x-means(GPU)をmarker_finderへ統合
+  ////
+  x-means
+    x-meansの高速化
+      apply, copy の条件分岐をGPU側で計算すれば main_buffer.read を減らせる
+      k2tasks更新のためにcountが必要で、sub_buffer.read は減らせなさそう
 
 
 課題
