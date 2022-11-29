@@ -20,14 +20,28 @@ class Aligner(wgpu_util.ComputeShaderBinding):
                 }
             },
             {
-                "binding": 1,  # data points
+                "binding": 1,  # cluster pairs
+                "visibility": wgpu.ShaderStage.COMPUTE,
+                "buffer": {
+                    "type": wgpu.BufferBindingType.read_only_storage,
+                }
+            },
+            {
+                "binding": 2,  # sub_mask
+                "visibility": wgpu.ShaderStage.COMPUTE,
+                "buffer": {
+                    "type": wgpu.BufferBindingType.read_only_storage,
+                }
+            },
+            {
+                "binding": 3,  # data points
                 "visibility": wgpu.ShaderStage.COMPUTE,
                 "buffer": {
                     "type": wgpu.BufferBindingType.storage,
                 }
             },
             {
-                "binding": 2,  # dest assignments
+                "binding": 4,  # dest assignments
                 "visibility": wgpu.ShaderStage.COMPUTE,
                 "buffer": {
                     "type": wgpu.BufferBindingType.storage,
@@ -38,17 +52,17 @@ class Aligner(wgpu_util.ComputeShaderBinding):
 
     def create_bind_group(
         self,
-        data_ranges: list[tuple[int, int]],
+        data_ranges: wgpu_util.BufferResource,
+        cluster_pairs: wgpu_util.BufferResource,
+        sub_mask: wgpu_util.BufferResource,
         points: wgpu_util.BufferResource,
         assignments: wgpu_util.BufferResource,
     ):
-        buffer_data_ranges = self.device.create_buffer_with_data(
-            data=numpy.array(data_ranges, dtype=numpy.dtype('<i'), order='C'),
-            usage=wgpu.BufferUsage.STORAGE
-        )
         entries = [
-            {"binding": 0, "resource": vars(wgpu_util.BufferResource(buffer_data_ranges))},
-            {"binding": 1, "resource": vars(points)},
-            {"binding": 2, "resource": vars(assignments)},
+            {"binding": 0, "resource": vars(data_ranges)},
+            {"binding": 1, "resource": vars(cluster_pairs)},
+            {"binding": 2, "resource": vars(sub_mask)},
+            {"binding": 3, "resource": vars(points)},
+            {"binding": 4, "resource": vars(assignments)},
         ]
         return super().create_bind_group(entries)

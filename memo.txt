@@ -93,17 +93,14 @@ poetry run python <filename>
       各クラスタを並列に処理するにはワークグループ数を増やす必要がある
         py側マルチスレッドや再帰とは相性が悪そう
   x-means(GPU)をmarker_finderへ統合
+  x-meansの高速化
+    align, copy の条件分岐をGPU側で計算すれば buffer.read を減らせる
+      判定用シェーダを用意
+    k2tasks更新のためにcountが必要で、0にはできなさそう
   ////
-  x-means
-    x-meansの高速化
-      apply, copy の条件分岐をGPU側で計算すれば main_buffer.read を減らせる
-      k2tasks更新のためにcountが必要で、sub_buffer.read は減らせなさそう
 
 
 課題
-  x-mean のwgpu実行?
-    compute_shaderの他の部分が遅すぎて苦しいか
-    分割に最小距離条件も加えたい
   orthogonalに近似せずperspectiveのまま計算?
     orthogonalへの近似は、マーカーサイズがカメラとの距離に対して十分に小さい必要がある
     align_patternをマッチして4点にしたらAruco同様の処理でいけそう

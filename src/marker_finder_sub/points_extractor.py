@@ -23,12 +23,16 @@ class PointsExtractor:
         # """
         max_depth = 8  # 2^8 = 256 data points
         min_distance = 3.0
-        points_position = numpy.array([[positives[0][1], positives[0][0]]])
-        if 2 <= len(positives):
+        points_position = numpy.array([])
+        if 1 == len(positives):
+            points_position = numpy.array([[positives[0][1], positives[0][0]]])
+        elif 2 <= len(positives):
             xm_positives = XMeans(self.device, numpy.array(positives), max_depth, min_distance)
             clusters = xm_positives.process().read_clusters_valid_sized()
             points_position = numpy.array([[c.mean[1], c.mean[0]] for c in clusters])
-        points_rotation = numpy.array([[negatives[0][1], negatives[0][0]]])
+        points_rotation = numpy.array([])
+        if 1 == len(negatives):
+            points_rotation = numpy.array([[negatives[0][1], negatives[0][0]]])
         if 2 <= len(negatives):
             xm_negatives = XMeans(self.device, numpy.array(negatives), max_depth, min_distance)
             clusters = xm_negatives.process().read_clusters_valid_sized()

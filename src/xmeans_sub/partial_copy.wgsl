@@ -28,6 +28,7 @@ type array_Cluster = array<Cluster, 256>;
 
 @group(0) @binding(4) var<storage, read> data_ranges: ArrayVec2U32;
 @group(0) @binding(5) var<storage, read> cluster_pairs: ArrayVec2U32;
+@group(0) @binding(6) var<storage, read> sub_mask: array_i32;
 
 struct IndexRange {
   offset: u32,
@@ -40,6 +41,9 @@ fn main(
   @builtin(workgroup_id) wid: vec3<u32>,
   @builtin(local_invocation_index) lid : u32
 ) {
+  if (sub_mask[cluster_pairs.value[wid.x][0]] < 1) {
+    return;
+  }
   let data_range = IndexRange(data_ranges.value[wid.x][0], data_ranges.value[wid.x][1]);
   let data_id = data_range.offset + lid;
   if (lid < data_range.length) {

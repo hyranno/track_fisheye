@@ -49,13 +49,19 @@ class PartialCopy(wgpu_util.ComputeShaderBinding):
                 }
             },
             {
-                "binding": 5,  # cluster ids
+                "binding": 5,  # cluster pairs
                 "visibility": wgpu.ShaderStage.COMPUTE,
                 "buffer": {
                     "type": wgpu.BufferBindingType.read_only_storage,
                 }
             },
-
+            {
+                "binding": 6,  # sub mask
+                "visibility": wgpu.ShaderStage.COMPUTE,
+                "buffer": {
+                    "type": wgpu.BufferBindingType.read_only_storage,
+                }
+            },
         ]
         super().__init__(device, cs_source, "main", bind_entries)
 
@@ -63,23 +69,17 @@ class PartialCopy(wgpu_util.ComputeShaderBinding):
         self,
         src: ClusterBuffer,
         dest: ClusterBuffer,
-        data_ranges: list[tuple[int, int]],
-        cluster_ids: list[tuple[int, int]],
+        data_ranges: wgpu_util.BufferResource,
+        cluster_pairs: wgpu_util.BufferResource,
+        sub_mask: wgpu_util.BufferResource,
     ):
-        buffer_data_range = self.device.create_buffer_with_data(
-            data=numpy.array(data_ranges, dtype=numpy.dtype('<i'), order='C'),  # <u32
-            usage=wgpu.BufferUsage.STORAGE
-        )
-        buffer_cluster_ids = self.device.create_buffer_with_data(
-            data=numpy.array(cluster_ids, dtype=numpy.dtype('<i'), order='C'),  # u<32
-            usage=wgpu.BufferUsage.STORAGE
-        )
         entries = [
             {"binding": 0, "resource": vars(src.datas)},
             {"binding": 1, "resource": vars(src.clusters)},
             {"binding": 2, "resource": vars(dest.datas)},
             {"binding": 3, "resource": vars(dest.clusters)},
-            {"binding": 4, "resource": vars(wgpu_util.BufferResource(buffer_data_range))},
-            {"binding": 5, "resource": vars(wgpu_util.BufferResource(buffer_cluster_ids))},
+            {"binding": 4, "resource": vars(data_ranges)},
+            {"binding": 5, "resource": vars(cluster_pairs)},
+            {"binding": 6, "resource": vars(sub_mask)},
         ]
         return super().create_bind_group(entries)

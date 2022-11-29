@@ -11,8 +11,10 @@ struct ArrayVec2U32 {
 };
 
 @group(0) @binding(0) var<storage, read> data_ranges: ArrayVec2U32;
-@group(0) @binding(1) var<storage, read_write> datas: array_Point;
-@group(0) @binding(2) var<storage, read_write> assignments: array_i32;
+@group(0) @binding(1) var<storage, read> cluster_pairs: ArrayVec2U32;
+@group(0) @binding(2) var<storage, read> sub_mask: array_i32;
+@group(0) @binding(3) var<storage, read_write> datas: array_Point;
+@group(0) @binding(4) var<storage, read_write> assignments: array_i32;
 
 struct IndexRange {
   offset: u32,
@@ -35,6 +37,9 @@ fn main(
   @builtin(workgroup_id) wid: vec3<u32>,
   @builtin(local_invocation_index) lid : u32
 ) {
+  if (sub_mask[cluster_pairs.value[wid.x][0]] < 1) {
+    return;
+  }
   data_range = IndexRange(data_ranges.value[wid.x][0], data_ranges.value[wid.x][1]);
   let start = i32(data_range.offset);
   let end = i32(data_range.offset + data_range.length);
